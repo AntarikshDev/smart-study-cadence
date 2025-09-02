@@ -231,20 +231,26 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
                   </Button>
                   
                    {showCustomInput ? (
-                    <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-lg">
-                      <Label htmlFor="custom-minutes" className="text-xs">Minutes:</Label>
-                      <Input 
-                        id="custom-minutes"
-                        type="number" 
-                        placeholder="1-120"
-                        value={customMinutes}
-                        onChange={(e) => setCustomMinutes(e.target.value)}
-                        className="w-20 h-8 text-sm"
-                        min="1"
-                        max="120"
-                      />
-                      <Button onClick={handleAddCustomTime} size="sm" className="h-8">Add</Button>
-                      <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm" className="h-8">Cancel</Button>
+                    <div className="w-full flex flex-col space-y-3 bg-muted/50 p-4 rounded-lg border">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="custom-minutes" className="text-sm font-medium">Add Minutes</Label>
+                        <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm">✕</Button>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Input 
+                          id="custom-minutes"
+                          type="number" 
+                          placeholder="Enter 1-120"
+                          value={customMinutes}
+                          onChange={(e) => setCustomMinutes(e.target.value)}
+                          className="flex-1"
+                          min="1"
+                          max="120"
+                        />
+                        <Button onClick={handleAddCustomTime} size="sm" className="whitespace-nowrap">
+                          Add Time
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Button 
