@@ -48,6 +48,38 @@ export default function Planner() {
     }
   };
 
+  const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await mockApi.createTopic(topicData);
+      await loadTopics();
+      toast({
+        title: "Topic added successfully!",
+        description: `${topicData.title} has been added to your revision plan.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error adding topic",
+        description: "Failed to add topic. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportTopics = async (importedTopics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    try {
+      for (const topic of importedTopics) {
+        await mockApi.createTopic(topic);
+      }
+      await loadTopics();
+    } catch (error) {
+      toast({
+        title: "Error importing topics",
+        description: "Failed to import some topics. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredTopics = topics.filter(topic => {
     const matchesSearch = topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          topic.subject.toLowerCase().includes(searchQuery.toLowerCase());

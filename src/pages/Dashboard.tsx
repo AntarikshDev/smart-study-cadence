@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KpiCard } from '@/components/revision/KpiCard';
 import { TopicCard } from '@/components/revision/TopicCard';
+import { MotivationalSection } from '@/components/revision/MotivationalSection';
+import { SnoozeFloatingButton } from '@/components/revision/SnoozeFloatingButton';
 import { mockApi } from '@/lib/mockApi';
 import { DashboardData, TopicCardData } from '@/types/revision';
 import { 
@@ -13,7 +15,7 @@ import {
   CheckCircle2,
   Clock,
   Flame,
-  Target,
+  Target,  
   TrendingUp,
   Timer,
   Zap,
@@ -72,6 +74,22 @@ export default function Dashboard() {
     navigate(`/planner?topic=${topicId}`);
   };
 
+  const handleSnoozeAll = async (days: number, cascade: boolean) => {
+    try {
+      // Snooze all pending topics
+      for (const topic of data?.dueToday || []) {
+        await mockApi.snoozeTopic(topic.scheduleId, days, cascade);
+      }
+      loadDashboardData(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to snooze topics. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -83,6 +101,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const pendingCount = data.dueToday.length + data.overdueCount;
 
   return (
     <div className="space-y-6">
@@ -108,12 +128,18 @@ export default function Dashboard() {
         
         <Button 
           onClick={() => navigate('/focus')}
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg"
         >
           <Zap className="h-4 w-4" />
           <span>Focus Mode</span>
         </Button>
       </div>
+
+      {/* Motivational Section */}
+      <MotivationalSection 
+        currentStreak={data.currentStreak} 
+        bestStreak={data.bestStreak} 
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -290,6 +316,12 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Snooze Floating Button */}
+      <SnoozeFloatingButton 
+        onSnooze={handleSnoozeAll}
+        pendingCount={pendingCount}
+      />
     </div>
   );
 }
