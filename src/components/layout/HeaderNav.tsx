@@ -22,6 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from '@/components/revision/NotificationCenter';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -104,15 +105,7 @@ export const HeaderNav = () => {
           </div>
 
           {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-4 w-4" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
-            >
-              2
-            </Badge>
-          </Button>
+          <NotificationCenter />
 
           {/* User menu */}
           <DropdownMenu>

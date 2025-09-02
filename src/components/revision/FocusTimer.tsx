@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +31,8 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [originalTime] = useState(topic.estimatedMinutes * 60);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [pausedAt, setPausedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -53,6 +56,24 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
     return () => clearInterval(interval);
   }, [isActive, isPaused, timeLeft]);
 
+  // Check for paused sessions older than 24 hours
+  useEffect(() => {
+    if (isPaused && pausedAt) {
+      const checkInterval = setInterval(() => {
+        const hoursSincePaused = (Date.now() - pausedAt.getTime()) / (1000 * 60 * 60);
+        if (hoursSincePaused >= 24) {
+          toast({
+            title: "Long pause detected",
+            description: "Do you want to mark this as complete? Please stop and save the topic to complete the journey.",
+            variant: "destructive",
+          });
+        }
+      }, 60000); // Check every minute
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [isPaused, pausedAt]);
+
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
@@ -72,6 +93,11 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
   };
 
   const handlePause = () => {
+    if (!isPaused) {
+      setPausedAt(new Date());
+    } else {
+      setPausedAt(null);
+    }
     setIsPaused(!isPaused);
     toast({
       title: isPaused ? "Revision resumed" : "Revision paused",
@@ -84,6 +110,7 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
     setIsPaused(false);
     setTimeLeft(originalTime);
     setSessionId(null);
+    setPausedAt(null);
     toast({
       title: "Timer reset",
       description: "Ready to start fresh!",
@@ -91,8 +118,19 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
   };
 
   const handleStop = () => {
+    if (timeLeft > 0 && timeLeft < originalTime * 0.8) {
+      setShowStopConfirm(true);
+    } else {
+      confirmStop();
+    }
+  };
+
+  const confirmStop = () => {
     const actualMinutes = Math.ceil((originalTime - timeLeft) / 60);
     if (actualMinutes > 0) {
+      setIsActive(false);
+      setIsPaused(false);
+      setPausedAt(null);
       onComplete('Good', notes, actualMinutes);
     } else {
       toast({
@@ -101,6 +139,7 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
         variant: "destructive",
       });
     }
+    setShowStopConfirm(false);
   };
 
   const handleAddCustomTime = () => {
@@ -124,6 +163,9 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
 
   const handleFinish = (rating: 'Again' | 'Hard' | 'Good' | 'Easy') => {
     const actualMinutes = Math.ceil((originalTime - timeLeft) / 60);
+    setIsActive(false);
+    setIsPaused(false);
+    setPausedAt(null);
     onComplete(rating, notes, actualMinutes);
   };
 
@@ -188,19 +230,21 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
                     {isPaused ? 'Resume' : 'Pause'}
                   </Button>
                   
-                  {showCustomInput ? (
-                    <div className="flex items-center space-x-2">
+                   {showCustomInput ? (
+                    <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-lg">
+                      <Label htmlFor="custom-minutes" className="text-xs">Minutes:</Label>
                       <Input 
+                        id="custom-minutes"
                         type="number" 
-                        placeholder="Minutes"
+                        placeholder="1-120"
                         value={customMinutes}
                         onChange={(e) => setCustomMinutes(e.target.value)}
-                        className="w-20 h-10"
+                        className="w-20 h-8 text-sm"
                         min="1"
                         max="120"
                       />
-                      <Button onClick={handleAddCustomTime} size="sm">Add</Button>
-                      <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm">Cancel</Button>
+                      <Button onClick={handleAddCustomTime} size="sm" className="h-8">Add</Button>
+                      <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm" className="h-8">Cancel</Button>
                     </div>
                   ) : (
                     <Button 
@@ -222,14 +266,38 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
                     Reset
                   </Button>
 
-                  <Button 
-                    onClick={handleStop}
-                    variant="destructive"
-                    size="lg"
-                  >
-                    <StopCircle className="h-4 w-4 mr-2" />
-                    Stop & Save
-                  </Button>
+                  <AlertDialog open={showStopConfirm} onOpenChange={setShowStopConfirm}>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        onClick={handleStop}
+                        variant="destructive"
+                        size="lg"
+                      >
+                        <StopCircle className="h-4 w-4 mr-2" />
+                        Stop & Save
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Stop Revision Early?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to stop and save it as a completed revision? 
+                          If you haven't completed this topic, please click "Pause" and the timer will resume from the time left for the topic.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => {
+                          setShowStopConfirm(false);
+                          handlePause();
+                        }}>
+                          Pause Instead
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmStop} className="bg-destructive hover:bg-destructive/90">
+                          Stop & Save
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </>
               )}
             </div>
