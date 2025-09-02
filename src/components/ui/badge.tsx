@@ -15,6 +15,28 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        success:
+          "border-transparent bg-success text-success-foreground hover:bg-success/80",
+        warning:
+          "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
+        // LMS-style pill badges
+        published:
+          "border-transparent bg-badge-published text-white hover:bg-badge-published/80",
+        draft:
+          "border-transparent bg-badge-draft text-white hover:bg-badge-draft/80",
+        paid:
+          "border-transparent bg-badge-paid text-white hover:bg-badge-paid/80",
+        free:
+          "border-transparent bg-badge-free text-white hover:bg-badge-free/80",
+        // Revision status badges
+        due:
+          "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
+        overdue:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        snoozed:
+          "border-transparent bg-muted text-muted-foreground hover:bg-muted/80",
+        completed:
+          "border-transparent bg-success text-success-foreground hover:bg-success/80",
       },
     },
     defaultVariants: {

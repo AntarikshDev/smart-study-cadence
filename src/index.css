@@ -2,41 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Revision Planner Design System - Matching LMS Theme */
 
 @layer base {
   :root {
+    /* Base colors - Clean white canvas */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 220 9% 15%;
 
+    /* Card system - White cards with subtle shadows */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 9% 15%;
 
+    /* Popover elements */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 9% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Emerald/Teal accent matching LMS */
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --primary-muted: 160 47% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Subtle greys for dividers */
+    --secondary: 210 17% 96%;
+    --secondary-foreground: 220 9% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted elements - Greys for subtle text */
+    --muted: 210 17% 96%;
+    --muted-foreground: 220 5% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Teal variant */
+    --accent: 172 66% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status colors for revision states */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* UI Elements */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 160 84% 39%;
 
+    /* Radius system - Rounded corners */
     --radius: 0.5rem;
+
+    /* Timer colors */
+    --timer-active: 160 84% 39%;
+    --timer-paused: 38 92% 50%;
+    --timer-bg: 210 17% 98%;
+
+    /* Badge colors matching LMS */
+    --badge-published: 142 71% 45%;
+    --badge-draft: 220 5% 47%;
+    --badge-paid: 217 91% 60%;
+    --badge-free: 142 71% 45%;
 
     --sidebar-background: 0 0% 98%;
 
