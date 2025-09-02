@@ -209,102 +209,102 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
             </div>
 
             {/* Timer Controls */}
-            <div className="flex justify-center items-center space-x-3">
-              {!isActive ? (
-                <Button 
-                  onClick={handleStart}
-                  size="lg"
-                  className="flex items-center space-x-2"
-                >
-                  <Play className="h-5 w-5" />
-                  <span>Start Revision</span>
-                </Button>
-              ) : (
-                <>
+            <div className="flex flex-col space-y-4">
+              {/* Main Timer Controls */}
+              <div className="flex justify-center items-center space-x-3 flex-wrap gap-2">
+                {!isActive ? (
                   <Button 
-                    onClick={handlePause}
-                    variant="outline"
+                    onClick={handleStart}
                     size="lg"
+                    className="flex items-center space-x-2"
                   >
-                    <Pause className="h-4 w-4 mr-2" />
-                    {isPaused ? 'Resume' : 'Pause'}
+                    <Play className="h-5 w-5" />
+                    <span>Start Revision</span>
                   </Button>
-                  
-                   {showCustomInput ? (
-                    <div className="w-full flex flex-col space-y-3 bg-muted/50 p-4 rounded-lg border">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="custom-minutes" className="text-sm font-medium">Add Minutes</Label>
-                        <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm">✕</Button>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Input 
-                          id="custom-minutes"
-                          type="number" 
-                          placeholder="Enter 1-120"
-                          value={customMinutes}
-                          onChange={(e) => setCustomMinutes(e.target.value)}
-                          className="flex-1"
-                          min="1"
-                          max="120"
-                        />
-                        <Button onClick={handleAddCustomTime} size="sm" className="whitespace-nowrap">
-                          Add Time
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
+                ) : (
+                  <>
                     <Button 
-                      onClick={() => setShowCustomInput(true)}
+                      onClick={handlePause}
                       variant="outline"
                       size="lg"
                     >
-                      <Settings2 className="h-4 w-4 mr-2" />
-                      Add Time
+                      <Pause className="h-4 w-4 mr-2" />
+                      {isPaused ? 'Resume' : 'Pause'}
                     </Button>
-                  )}
-                  
-                  <Button 
-                    onClick={handleReset}
-                    variant="outline"
-                    size="lg"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset
-                  </Button>
-
-                  <AlertDialog open={showStopConfirm} onOpenChange={setShowStopConfirm}>
-                    <AlertDialogTrigger asChild>
+                    
+                    {!showCustomInput && (
                       <Button 
-                        onClick={handleStop}
-                        variant="destructive"
+                        onClick={() => setShowCustomInput(true)}
+                        variant="outline"
                         size="lg"
                       >
-                        <StopCircle className="h-4 w-4 mr-2" />
-                        Stop & Save
+                        <Settings2 className="h-4 w-4 mr-2" />
+                        Add Time
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Stop Revision Early?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to stop and save it as a completed revision? 
-                          If you haven't completed this topic, please click "Pause" and the timer will resume from the time left for the topic.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => {
-                          setShowStopConfirm(false);
-                          handlePause();
-                        }}>
-                          Pause Instead
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmStop} className="bg-destructive hover:bg-destructive/90">
+                    )}
+                    
+                    <Button 
+                      onClick={handleReset}
+                      variant="outline"
+                      size="lg"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset
+                    </Button>
+
+                    <AlertDialog open={showStopConfirm} onOpenChange={setShowStopConfirm}>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          onClick={handleStop}
+                          variant="destructive"
+                          size="lg"
+                        >
+                          <StopCircle className="h-4 w-4 mr-2" />
                           Stop & Save
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Stop Revision Early?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to stop and save it as a completed revision? 
+                            If you haven't completed this topic, please click "Pause" and the timer will resume from the time left for the topic.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => {
+                            setShowStopConfirm(false);
+                            handlePause();
+                          }}>
+                            Pause Instead
+                          </AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmStop} className="bg-destructive hover:bg-destructive/90">
+                            Stop & Save
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </div>
+
+              {/* Add Time Section */}
+              {showCustomInput && (
+                <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-lg">
+                  <Label htmlFor="custom-minutes" className="text-xs">Minutes:</Label>
+                  <Input 
+                    id="custom-minutes"
+                    type="number" 
+                    placeholder="1-120"
+                    value={customMinutes}
+                    onChange={(e) => setCustomMinutes(e.target.value)}
+                    className="w-20 h-8 text-sm"
+                    min="1"
+                    max="120"
+                  />
+                  <Button onClick={handleAddCustomTime} size="sm" className="h-8">Add</Button>
+                  <Button onClick={() => setShowCustomInput(false)} variant="ghost" size="sm" className="h-8">Cancel</Button>
+                </div>
               )}
             </div>
           </div>
