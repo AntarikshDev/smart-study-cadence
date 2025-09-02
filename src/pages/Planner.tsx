@@ -6,6 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddTopicDialog } from '@/components/revision/AddTopicDialog';
+import { ImportCSVDialog } from '@/components/revision/ImportCSVDialog';
+import { SettingsDialog } from '@/components/revision/SettingsDialog';
+import { EditTopicDialog } from '@/components/revision/EditTopicDialog';
+import { ScheduleDialog } from '@/components/revision/ScheduleDialog';
+import { SnoozeFloatingButton } from '@/components/revision/SnoozeFloatingButton';
 import { 
   Plus, 
   Search, 
@@ -15,8 +21,18 @@ import {
   FileText,
   Target,
   Book,
-  Star
+  Star,
+  Upload,
+  Edit,
+  Eye,
+  MoreHorizontal
 } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { mockApi } from '@/lib/mockApi';
 import { Topic } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +43,14 @@ export default function Planner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
   const [dailyCapacity, setDailyCapacity] = useState(45);
+  
+  // Dialog states
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
   useEffect(() => {
     loadTopics();
@@ -80,6 +104,41 @@ export default function Planner() {
     }
   };
 
+  const handleEditTopic = (topic: Topic) => {
+    setSelectedTopic(topic);
+    setShowEditDialog(true);
+  };
+
+  const handleViewSchedule = (topic: Topic) => {
+    setSelectedTopic(topic);
+    setShowScheduleDialog(true);
+  };
+
+  const handleSaveEdit = async (topicId: string, updates: Partial<Topic>) => {
+    try {
+      await mockApi.updateTopic(topicId, updates);
+      await loadTopics();
+      toast({
+        title: "Topic updated successfully!",
+        description: "Your changes have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating topic",
+        description: "Failed to update topic. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSnoozeAll = async (days: number, cascade: boolean) => {
+    // Mock implementation - in real app would snooze all pending topics
+    toast({
+      title: "All topics snoozed! 😴",
+      description: `All pending revisions snoozed for ${days} day(s).`,
+    });
+  };
+
   const filteredTopics = topics.filter(topic => {
     const matchesSearch = topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          topic.subject.toLowerCase().includes(searchQuery.toLowerCase());
@@ -88,6 +147,7 @@ export default function Planner() {
   });
 
   const subjects = [...new Set(topics.map(t => t.subject))];
+  const pendingTopics = topics.filter(t => !t.isArchived); // Mock pending count
 
   const getMasteryColor = (level: string) => {
     switch (level) {
@@ -127,20 +187,27 @@ export default function Planner() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <FileText className="h-4 w-4 mr-2" />
+          <Button 
+            onClick={() => setShowImportDialog(true)}
+            variant="outline" 
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 text-blue-700"
+          >
+            <Upload className="h-4 w-4" />
             Import CSV
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Plus className="h-4 w-4" />
             Add Topic
           </Button>
         </div>
       </div>
 
       {/* Controls */}
-      <Card>
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-r from-white to-gray-50/50 border-gray-200 shadow-sm">
+        <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -149,16 +216,16 @@ export default function Planner() {
                   placeholder="Search topics..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-white border-gray-200 focus:border-emerald-300 focus:ring-emerald-100"
                 />
               </div>
             </div>
             
             <Select value={filterSubject} onValueChange={setFilterSubject}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-white border-gray-200">
                 <SelectValue placeholder="Filter by subject" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border border-gray-200 z-50">
                 <SelectItem value="all">All Subjects</SelectItem>
                 {subjects.map(subject => (
                   <SelectItem key={subject} value={subject}>{subject}</SelectItem>
@@ -167,14 +234,14 @@ export default function Planner() {
             </Select>
 
             <div className="flex items-center space-x-2">
-              <Label htmlFor="capacity" className="text-sm">Capacity:</Label>
+              <Label htmlFor="capacity" className="text-sm font-medium">Revision Capacity:</Label>
               <div className="flex items-center space-x-1">
                 <Input
                   id="capacity"
                   type="number"
                   value={dailyCapacity}
                   onChange={(e) => setDailyCapacity(Number(e.target.value))}
-                  className="w-16"
+                  className="w-16 bg-white border-gray-200"
                   min="15"
                   max="480"
                 />
@@ -182,7 +249,12 @@ export default function Planner() {
               </div>
             </div>
 
-            <Button variant="outline" size="icon">
+            <Button 
+              onClick={() => setShowSettingsDialog(true)}
+              variant="outline" 
+              size="icon"
+              className="bg-white border-gray-200 hover:bg-gray-50"
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -213,7 +285,10 @@ export default function Planner() {
                     {searchQuery ? 'Try adjusting your search' : 'Add your first topic to get started'}
                   </p>
                 </div>
-                <Button>
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Topic
                 </Button>
@@ -286,11 +361,23 @@ export default function Planner() {
                   
                   <div className="col-span-2">
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm">
-                        Edit
+                      <Button 
+                        onClick={() => handleEditTopic(topic)}
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center space-x-1 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors"
+                      >
+                        <Edit className="h-3 w-3" />
+                        <span>Edit</span>
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Schedule
+                      <Button 
+                        onClick={() => handleViewSchedule(topic)}
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center space-x-1 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors"
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Schedule</span>
                       </Button>
                     </div>
                   </div>
@@ -303,47 +390,47 @@ export default function Planner() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Book className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Total Topics</span>
+              <Book className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">Total Topics</span>
             </div>
-            <div className="text-2xl font-bold mt-2">{topics.length}</div>
+            <div className="text-2xl font-bold mt-2 text-blue-700">{topics.length}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Target className="h-4 w-4 text-warning" />
-              <span className="text-sm font-medium">Must-Win</span>
+              <Target className="h-4 w-4 text-orange-600" />
+              <span className="text-sm font-medium text-orange-900">Must-Win</span>
             </div>
-            <div className="text-2xl font-bold mt-2">
+            <div className="text-2xl font-bold mt-2 text-orange-700">
               {topics.filter(t => t.mustWin).length}
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-success" />
-              <span className="text-sm font-medium">Total Time</span>
+              <Clock className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-900">Total Time</span>
             </div>
-            <div className="text-2xl font-bold mt-2">
+            <div className="text-2xl font-bold mt-2 text-emerald-700">
               {topics.reduce((sum, t) => sum + t.estimatedMinutes, 0)}m
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Star className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Avg Difficulty</span>
+              <Star className="h-4 w-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-900">Avg Difficulty</span>
             </div>
-            <div className="text-2xl font-bold mt-2">
+            <div className="text-2xl font-bold mt-2 text-purple-700">
               {topics.length > 0 
                 ? (topics.reduce((sum, t) => sum + t.difficulty, 0) / topics.length).toFixed(1)
                 : '0'
@@ -352,6 +439,49 @@ export default function Planner() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      <AddTopicDialog
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onAdd={handleAddTopic}
+      />
+
+      <ImportCSVDialog
+        isOpen={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={handleImportTopics}
+      />
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+      />
+
+      <EditTopicDialog
+        isOpen={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setSelectedTopic(null);
+        }}
+        topic={selectedTopic}
+        onSave={handleSaveEdit}
+      />
+
+      <ScheduleDialog
+        isOpen={showScheduleDialog}
+        onClose={() => {
+          setShowScheduleDialog(false);
+          setSelectedTopic(null);
+        }}
+        topic={selectedTopic}
+      />
+
+      {/* Snooze Floating Button */}
+      <SnoozeFloatingButton 
+        onSnooze={handleSnoozeAll}
+        pendingCount={pendingTopics.length}
+      />
     </div>
   );
 }
