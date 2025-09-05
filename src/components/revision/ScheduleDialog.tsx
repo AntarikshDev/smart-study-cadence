@@ -109,6 +109,29 @@ export const ScheduleDialog = ({ isOpen, onClose, topic }: ScheduleDialogProps) 
     }
   };
 
+  const markAsComplete = (entryId: string) => {
+    setScheduleEntries(prev => 
+      prev.map(entry => 
+        entry.id === entryId 
+          ? {
+              ...entry,
+              isCompleted: true,
+              completedAt: new Date(),
+              isSnoozed: false,
+              snoozeDate: undefined,
+              rating: 'Good', // Default rating for manually completed entries
+              actualMinutes: topic?.estimatedMinutes || 30 // Use estimated time as default
+            }
+          : entry
+      )
+    );
+
+    toast({
+      title: "Revision marked as complete",
+      description: `The revision has been marked as completed successfully.`,
+    });
+  };
+
   if (!topic) return null;
 
   const completedEntries = scheduleEntries.filter(e => e.isCompleted);
@@ -227,6 +250,18 @@ export const ScheduleDialog = ({ isOpen, onClose, topic }: ScheduleDialogProps) 
                           <Badge variant="secondary">
                             {entry.actualMinutes}m
                           </Badge>
+                        )}
+                        
+                        {/* Mark as Complete button for snoozed and overdue entries */}
+                        {(entry.isSnoozed || (entry.dueDate < new Date() && !entry.isCompleted)) && (
+                          <Button
+                            onClick={() => markAsComplete(entry.id)}
+                            variant="outline"
+                            size="sm"
+                            className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                          >
+                            Mark as Complete
+                          </Button>
                         )}
                       </div>
                     </div>
