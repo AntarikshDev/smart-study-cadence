@@ -9,80 +9,66 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Upload, 
-  Download, 
-  Users, 
-  BookOpen, 
-  Calendar, 
-  TrendingUp, 
-  FileSpreadsheet,
-  Eye,
-  BarChart3,
-  Settings,
-  Plus,
-  Edit,
-  Trash2,
-  Activity,
-  Clock,
-  Target,
-  Award,
-  AlertTriangle,
-  CheckCircle,
-  Timer,
-  Brain,
-  Zap,
-  TrendingDown
-} from 'lucide-react';
+import { Upload, Download, Users, BookOpen, Calendar, TrendingUp, FileSpreadsheet, Eye, BarChart3, Settings, Plus, Edit, Trash2, Activity, Clock, Target, Award, AlertTriangle, CheckCircle, Timer, Brain, Zap, TrendingDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { KpiCard } from '@/components/revision/KpiCard';
 
 // Mock data for demonstration
-const mockStudents = [
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    email: 'alice@example.com',
-    totalTopics: 24,
-    completedToday: 3,
-    overdue: 2,
-    onTimeRate: 85,
-    weeklyMinutes: 450,
-    lastActive: new Date('2024-01-05'),
-    status: 'active'
-  },
-  {
-    id: '2',
-    name: 'Bob Smith',
-    email: 'bob@example.com',
-    totalTopics: 18,
-    completedToday: 1,
-    overdue: 5,
-    onTimeRate: 62,
-    weeklyMinutes: 280,
-    lastActive: new Date('2024-01-04'),
-    status: 'struggling'
-  },
-  {
-    id: '3',
-    name: 'Carol Davis',
-    email: 'carol@example.com',
-    totalTopics: 31,
-    completedToday: 4,
-    overdue: 0,
-    onTimeRate: 94,
-    weeklyMinutes: 680,
-    lastActive: new Date('2024-01-05'),
-    status: 'excellent'
-  }
-];
-
-const mockSubjects = [
-  { id: '1', name: 'Mathematics', topicCount: 45, activeStudents: 12 },
-  { id: '2', name: 'Physics', topicCount: 38, activeStudents: 8 },
-  { id: '3', name: 'Chemistry', topicCount: 42, activeStudents: 10 },
-  { id: '4', name: 'Biology', topicCount: 35, activeStudents: 9 }
-];
+const mockStudents = [{
+  id: '1',
+  name: 'Alice Johnson',
+  email: 'alice@example.com',
+  totalTopics: 24,
+  completedToday: 3,
+  overdue: 2,
+  onTimeRate: 85,
+  weeklyMinutes: 450,
+  lastActive: new Date('2024-01-05'),
+  status: 'active'
+}, {
+  id: '2',
+  name: 'Bob Smith',
+  email: 'bob@example.com',
+  totalTopics: 18,
+  completedToday: 1,
+  overdue: 5,
+  onTimeRate: 62,
+  weeklyMinutes: 280,
+  lastActive: new Date('2024-01-04'),
+  status: 'struggling'
+}, {
+  id: '3',
+  name: 'Carol Davis',
+  email: 'carol@example.com',
+  totalTopics: 31,
+  completedToday: 4,
+  overdue: 0,
+  onTimeRate: 94,
+  weeklyMinutes: 680,
+  lastActive: new Date('2024-01-05'),
+  status: 'excellent'
+}];
+const mockSubjects = [{
+  id: '1',
+  name: 'Mathematics',
+  topicCount: 45,
+  activeStudents: 12
+}, {
+  id: '2',
+  name: 'Physics',
+  topicCount: 38,
+  activeStudents: 8
+}, {
+  id: '3',
+  name: 'Chemistry',
+  topicCount: 42,
+  activeStudents: 10
+}, {
+  id: '4',
+  name: 'Biology',
+  topicCount: 35,
+  activeStudents: 9
+}];
 
 // Mock comprehensive analytics data
 const mockSystemAnalytics = {
@@ -99,47 +85,139 @@ const mockSystemAnalytics = {
   completionRate: 76,
   onTimeRate: 84,
   strugglingStudents: 18,
-  excellentStudents: 32,
+  excellentStudents: 32
 };
-
-const mockEngagementData = [
-  { day: 'Monday', active: 89, sessions: 234, minutes: 10450 },
-  { day: 'Tuesday', active: 92, sessions: 267, minutes: 11230 },
-  { day: 'Wednesday', active: 85, sessions: 198, minutes: 9870 },
-  { day: 'Thursday', active: 94, sessions: 289, minutes: 12100 },
-  { day: 'Friday', active: 87, sessions: 213, minutes: 9560 },
-  { day: 'Saturday', active: 76, sessions: 167, minutes: 7890 },
-  { day: 'Sunday', active: 68, sessions: 134, minutes: 6450 },
-];
-
-const mockSubjectPerformance = [
-  { subject: 'Mathematics', students: 45, avgScore: 78, completion: 82, difficulty: 4.2 },
-  { subject: 'Physics', students: 38, avgScore: 71, completion: 76, difficulty: 4.5 },
-  { subject: 'Chemistry', students: 42, avgScore: 84, completion: 88, difficulty: 3.8 },
-  { subject: 'Biology', students: 35, avgScore: 89, completion: 92, difficulty: 3.2 },
-  { subject: 'Computer Science', students: 28, avgScore: 86, completion: 90, difficulty: 3.9 },
-];
-
-const mockPerformanceTrends = [
-  { week: 'Week 1', onTime: 78, completion: 82, engagement: 85 },
-  { week: 'Week 2', onTime: 81, completion: 79, engagement: 88 },
-  { week: 'Week 3', onTime: 79, completion: 84, engagement: 82 },
-  { week: 'Week 4', onTime: 84, completion: 87, engagement: 91 },
-];
-
+const mockEngagementData = [{
+  day: 'Monday',
+  active: 89,
+  sessions: 234,
+  minutes: 10450
+}, {
+  day: 'Tuesday',
+  active: 92,
+  sessions: 267,
+  minutes: 11230
+}, {
+  day: 'Wednesday',
+  active: 85,
+  sessions: 198,
+  minutes: 9870
+}, {
+  day: 'Thursday',
+  active: 94,
+  sessions: 289,
+  minutes: 12100
+}, {
+  day: 'Friday',
+  active: 87,
+  sessions: 213,
+  minutes: 9560
+}, {
+  day: 'Saturday',
+  active: 76,
+  sessions: 167,
+  minutes: 7890
+}, {
+  day: 'Sunday',
+  active: 68,
+  sessions: 134,
+  minutes: 6450
+}];
+const mockSubjectPerformance = [{
+  subject: 'Mathematics',
+  students: 45,
+  avgScore: 78,
+  completion: 82,
+  difficulty: 4.2
+}, {
+  subject: 'Physics',
+  students: 38,
+  avgScore: 71,
+  completion: 76,
+  difficulty: 4.5
+}, {
+  subject: 'Chemistry',
+  students: 42,
+  avgScore: 84,
+  completion: 88,
+  difficulty: 3.8
+}, {
+  subject: 'Biology',
+  students: 35,
+  avgScore: 89,
+  completion: 92,
+  difficulty: 3.2
+}, {
+  subject: 'Computer Science',
+  students: 28,
+  avgScore: 86,
+  completion: 90,
+  difficulty: 3.9
+}];
+const mockPerformanceTrends = [{
+  week: 'Week 1',
+  onTime: 78,
+  completion: 82,
+  engagement: 85
+}, {
+  week: 'Week 2',
+  onTime: 81,
+  completion: 79,
+  engagement: 88
+}, {
+  week: 'Week 3',
+  onTime: 79,
+  completion: 84,
+  engagement: 82
+}, {
+  week: 'Week 4',
+  onTime: 84,
+  completion: 87,
+  engagement: 91
+}];
 const mockLeaderboardInsights = {
-  topPerformers: [
-    { name: 'Alice Johnson', score: 95, streak: 12, topics: 24 },
-    { name: 'Carol Davis', score: 94, streak: 8, topics: 31 },
-    { name: 'David Wilson', score: 92, streak: 15, topics: 19 },
-    { name: 'Emma Brown', score: 90, streak: 6, topics: 28 },
-    { name: 'Frank Miller', score: 88, streak: 10, topics: 22 },
-  ],
-  struggling: [
-    { name: 'Bob Smith', score: 62, overdue: 5, needsHelp: true },
-    { name: 'Grace Lee', score: 58, overdue: 8, needsHelp: true },
-    { name: 'Henry Clark', score: 54, overdue: 12, needsHelp: true },
-  ],
+  topPerformers: [{
+    name: 'Alice Johnson',
+    score: 95,
+    streak: 12,
+    topics: 24
+  }, {
+    name: 'Carol Davis',
+    score: 94,
+    streak: 8,
+    topics: 31
+  }, {
+    name: 'David Wilson',
+    score: 92,
+    streak: 15,
+    topics: 19
+  }, {
+    name: 'Emma Brown',
+    score: 90,
+    streak: 6,
+    topics: 28
+  }, {
+    name: 'Frank Miller',
+    score: 88,
+    streak: 10,
+    topics: 22
+  }],
+  struggling: [{
+    name: 'Bob Smith',
+    score: 62,
+    overdue: 5,
+    needsHelp: true
+  }, {
+    name: 'Grace Lee',
+    score: 58,
+    overdue: 8,
+    needsHelp: true
+  }, {
+    name: 'Henry Clark',
+    score: 54,
+    overdue: 12,
+    needsHelp: true
+  }],
   averageMetrics: {
     score: 76,
     streak: 4.2,
@@ -147,22 +225,18 @@ const mockLeaderboardInsights = {
     completionRate: 78
   }
 };
-
 const AdminHub = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [uploadType, setUploadType] = useState<'subjects' | 'topics' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleFileUpload = (type: 'subjects' | 'topics') => {
     setUploadType(type);
     fileInputRef.current?.click();
   };
-
   const processFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (file.type !== 'text/csv') {
       toast({
         title: "Invalid file type",
@@ -176,12 +250,11 @@ const AdminHub = () => {
     setTimeout(() => {
       toast({
         title: "Upload successful",
-        description: `${uploadType} data has been imported successfully.`,
+        description: `${uploadType} data has been imported successfully.`
       });
       setUploadType(null);
     }, 1000);
   };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'excellent':
@@ -194,7 +267,6 @@ const AdminHub = () => {
         return <Badge variant="secondary">Unknown</Badge>;
     }
   };
-
   const downloadTemplate = (type: 'subjects' | 'topics') => {
     const templates = {
       subjects: 'subject_name,description,category\nMathematics,"Advanced mathematics topics",STEM\nPhysics,"Physics concepts and theories",STEM',
@@ -208,8 +280,9 @@ Biology,"Cell Biology","Mitosis and Meiosis",25,3,2,Advanced,false,Light
 Computer Science,"Data Structures","Binary Trees",40,4,3,Intermediate,false,Standard
 English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard`
     };
-    
-    const blob = new Blob([templates[type]], { type: 'text/csv' });
+    const blob = new Blob([templates[type]], {
+      type: 'text/csv'
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -217,9 +290,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -228,12 +299,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
             Manage students, subjects, and analyze revision performance
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => downloadTemplate('subjects')}>
-            <Download className="w-4 h-4 mr-2" />
-            Templates
-          </Button>
-        </div>
+        
       </div>
 
       {/* Quick Stats */}
@@ -317,8 +383,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockStudents.map((student) => (
-                      <TableRow key={student.id}>
+                    {mockStudents.map(student => <TableRow key={student.id}>
                         <TableCell>
                           <div>
                             <div className="font-medium">{student.name}</div>
@@ -331,11 +396,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                           <Badge variant="outline">{student.completedToday}</Badge>
                         </TableCell>
                         <TableCell>
-                          {student.overdue > 0 ? (
-                            <Badge variant="destructive">{student.overdue}</Badge>
-                          ) : (
-                            <Badge className="bg-emerald-100 text-emerald-700">0</Badge>
-                          )}
+                          {student.overdue > 0 ? <Badge variant="destructive">{student.overdue}</Badge> : <Badge className="bg-emerald-100 text-emerald-700">0</Badge>}
                         </TableCell>
                         <TableCell>{student.onTimeRate}%</TableCell>
                         <TableCell>{student.weeklyMinutes}m</TableCell>
@@ -402,8 +463,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                             </DialogContent>
                           </Dialog>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -426,18 +486,11 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2">
-                <Button 
-                  onClick={() => handleFileUpload('topics')}
-                  className="w-full"
-                  size="lg"
-                >
+                <Button onClick={() => handleFileUpload('topics')} className="w-full" size="lg">
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Upload Comprehensive Topics CSV
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => downloadTemplate('topics')}
-                >
+                <Button variant="outline" onClick={() => downloadTemplate('topics')}>
                   <Download className="w-4 h-4 mr-2" />
                   Download Enhanced Template
                 </Button>
@@ -482,8 +535,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockSubjects.map((subject) => (
-                      <TableRow key={subject.id}>
+                    {mockSubjects.map(subject => <TableRow key={subject.id}>
                         <TableCell className="font-medium">{subject.name}</TableCell>
                         <TableCell>{subject.topicCount}</TableCell>
                         <TableCell>{subject.activeStudents}</TableCell>
@@ -497,8 +549,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -510,34 +561,22 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
         <TabsContent value="analytics" className="space-y-6">
           {/* System-wide KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
-              title="Total Students"
-              value={mockSystemAnalytics.totalStudents}
-              icon={Users}
-              delta={{ value: 8.5, isPositive: true }}
-              className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200"
-            />
-            <KpiCard
-              title="Active Today"
-              value={mockSystemAnalytics.activeStudents}
-              icon={Activity}
-              delta={{ value: 12.3, isPositive: true }}
-              className="bg-gradient-to-br from-green-50 to-green-100 border-green-200"
-            />
-            <KpiCard
-              title="Daily Revisions"
-              value={mockSystemAnalytics.dailyRevisions.toLocaleString()}
-              icon={Target}
-              delta={{ value: 15.7, isPositive: true }}
-              className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200"
-            />
-            <KpiCard
-              title="Completion Rate"
-              value={`${mockSystemAnalytics.completionRate}%`}
-              icon={CheckCircle}
-              delta={{ value: -2.1, isPositive: false }}
-              className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200"
-            />
+            <KpiCard title="Total Students" value={mockSystemAnalytics.totalStudents} icon={Users} delta={{
+            value: 8.5,
+            isPositive: true
+          }} className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200" />
+            <KpiCard title="Active Today" value={mockSystemAnalytics.activeStudents} icon={Activity} delta={{
+            value: 12.3,
+            isPositive: true
+          }} className="bg-gradient-to-br from-green-50 to-green-100 border-green-200" />
+            <KpiCard title="Daily Revisions" value={mockSystemAnalytics.dailyRevisions.toLocaleString()} icon={Target} delta={{
+            value: 15.7,
+            isPositive: true
+          }} className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200" />
+            <KpiCard title="Completion Rate" value={`${mockSystemAnalytics.completionRate}%`} icon={CheckCircle} delta={{
+            value: -2.1,
+            isPositive: false
+          }} className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200" />
           </div>
 
           {/* Performance Analytics */}
@@ -590,8 +629,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockSubjectPerformance.map((subject, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  {mockSubjectPerformance.map((subject, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{subject.subject}</div>
                         <div className="text-sm text-muted-foreground">{subject.students} students</div>
@@ -610,8 +648,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                           <div className="text-xs text-muted-foreground">Difficulty</div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -629,20 +666,17 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {mockEngagementData.map((day, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
+                  {mockEngagementData.map((day, index) => <div key={index} className="flex items-center justify-between text-sm">
                       <span className="w-20">{day.day.slice(0, 3)}</span>
                       <div className="flex items-center gap-2 flex-1">
                         <div className="bg-primary/20 rounded h-2 flex-1 relative">
-                          <div 
-                            className="bg-primary rounded h-2" 
-                            style={{ width: `${(day.active / 100) * 100}%` }}
-                          />
+                          <div className="bg-primary rounded h-2" style={{
+                        width: `${day.active / 100 * 100}%`
+                      }} />
                         </div>
                         <span className="font-medium w-8">{day.active}</span>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -690,8 +724,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
               <CardContent>
                 <div className="space-y-3">
                   <div className="text-sm font-medium text-muted-foreground">Top 5 Performers</div>
-                  {mockLeaderboardInsights.topPerformers.slice(0, 3).map((student, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                  {mockLeaderboardInsights.topPerformers.slice(0, 3).map((student, index) => <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-yellow-200 flex items-center justify-center text-xs font-bold">
                           {index + 1}
@@ -705,8 +738,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                         <div className="text-sm font-semibold text-yellow-600">{student.score}%</div>
                         <div className="text-xs text-muted-foreground">{student.streak} streak</div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -724,8 +756,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockLeaderboardInsights.struggling.map((student, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                  {mockLeaderboardInsights.struggling.map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
                       <div>
                         <div className="font-medium">{student.name}</div>
                         <div className="text-sm text-red-600">{student.overdue} overdue topics</div>
@@ -737,8 +768,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                           Help
                         </Button>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -753,16 +783,11 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockPerformanceTrends.map((week, index) => (
-                    <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                  {mockPerformanceTrends.map((week, index) => <div key={index} className="p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">{week.week}</span>
                         <div className="flex items-center gap-1">
-                          {week.onTime > (mockPerformanceTrends[index - 1]?.onTime || 0) ? (
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                          )}
+                          {week.onTime > (mockPerformanceTrends[index - 1]?.onTime || 0) ? <TrendingUp className="w-4 h-4 text-green-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-xs">
@@ -779,8 +804,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
                           <div className="text-muted-foreground">Engaged</div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -851,15 +875,7 @@ English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard
       </Tabs>
 
       {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv"
-        onChange={processFileUpload}
-        className="hidden"
-      />
-    </div>
-  );
+      <input ref={fileInputRef} type="file" accept=".csv" onChange={processFileUpload} className="hidden" />
+    </div>;
 };
-
 export default AdminHub;
