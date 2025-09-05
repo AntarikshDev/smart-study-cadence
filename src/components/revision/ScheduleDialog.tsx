@@ -30,38 +30,35 @@ export const ScheduleDialog = ({ isOpen, onClose, topic }: ScheduleDialogProps) 
 
   useEffect(() => {
     if (topic && isOpen) {
-      generateScheduleEntries();
+      generateScheduleEntries(false); // Start from first studied date
     }
   }, [topic, isOpen]);
 
-  const generateScheduleEntries = () => {
+  const generateScheduleEntries = (fromToday = false) => {
     if (!topic) return;
 
     const entries: ScheduleEntry[] = [];
-    const cycles = [7, 14, 21, 28]; // Spaced repetition intervals
-    let baseDate = new Date(topic.firstStudied);
+    
+    // Use the topic's revision frequency intervals directly
+    const intervals = topic.revisionFrequency?.intervals || [7, 14, 21, 28]; // Default to Standard
+    let baseDate = fromToday ? new Date() : new Date(topic.firstStudied);
+    
+    // Reset to start of day
+    baseDate.setHours(0, 0, 0, 0);
 
-    cycles.forEach((cycle, index) => {
+    intervals.forEach((interval, index) => {
       const dueDate = new Date(baseDate);
-      dueDate.setDate(baseDate.getDate() + cycle);
-
-      // Mock some completed and snoozed entries for demo
-      const isCompleted = Math.random() > 0.5 && index < 2;
-      const isSnoozed = !isCompleted && Math.random() > 0.7;
+      dueDate.setDate(baseDate.getDate() + interval);
 
       entries.push({
-        id: `${topic.id}_cycle_${cycle}`,
-        cycle,
+        id: `${topic.id}_cycle_${interval}`,
+        cycle: interval,
         dueDate,
-        isCompleted,
-        completedAt: isCompleted ? new Date(dueDate.getTime() + Math.random() * 86400000) : undefined,
-        isSnoozed,
-        snoozeDate: isSnoozed ? new Date(dueDate.getTime() + 3 * 86400000) : undefined,
-        rating: isCompleted ? ['Easy', 'Good', 'Hard', 'Again'][Math.floor(Math.random() * 4)] : undefined,
-        actualMinutes: isCompleted ? Math.floor(Math.random() * 30) + 20 : undefined,
+        isCompleted: false, // Start all as pending
+        isSnoozed: false,
+        rating: undefined,
+        actualMinutes: undefined,
       });
-
-      baseDate = dueDate;
     });
 
     setScheduleEntries(entries);
@@ -75,7 +72,7 @@ export const ScheduleDialog = ({ isOpen, onClose, topic }: ScheduleDialogProps) 
       description: `Schedule for ${topic.title} has been regenerated from today.`,
     });
     
-    generateScheduleEntries();
+    generateScheduleEntries(true); // Pass true to start from today
   };
 
   const getStatusIcon = (entry: ScheduleEntry) => {
