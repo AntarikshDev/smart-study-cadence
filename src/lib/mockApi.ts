@@ -10,8 +10,28 @@ import {
   LeaderboardEntry, 
   ComparisonData, 
   AnalyticsData,
-  UserSettings 
+  UserSettings,
+  RevisionFrequency 
 } from '@/types/revision';
+
+// Mock data for revision frequencies
+const revisionFrequencies: RevisionFrequency[] = [
+  {
+    type: 'Light',
+    intervals: [7, 21, 60],
+    description: '3 revisions over 2 months - Good for easier topics'
+  },
+  {
+    type: 'Standard',
+    intervals: [7, 14, 21, 28],
+    description: '4 revisions over 1 month - Balanced approach'
+  },
+  {
+    type: 'Intensive',
+    intervals: [3, 7, 14, 21, 28],
+    description: '5 revisions over 1 month - Best for difficult/critical topics'
+  }
+];
 
 // Demo Topics
 const mockTopics: Topic[] = [
@@ -27,6 +47,7 @@ const mockTopics: Topic[] = [
     masteryLevel: 'Intermediate',
     mustWin: true,
     isArchived: false,
+    revisionFrequency: revisionFrequencies[2], // Intensive for high weightage+difficulty
     createdAt: new Date('2024-08-15'),
     updatedAt: new Date('2024-08-15'),
   },
@@ -42,6 +63,7 @@ const mockTopics: Topic[] = [
     masteryLevel: 'Beginner',
     mustWin: true,
     isArchived: false,
+    revisionFrequency: revisionFrequencies[2], // Intensive for highest difficulty
     createdAt: new Date('2024-08-20'),
     updatedAt: new Date('2024-08-20'),
   },
@@ -57,6 +79,7 @@ const mockTopics: Topic[] = [
     masteryLevel: 'Advanced',
     mustWin: false,
     isArchived: false,
+    revisionFrequency: revisionFrequencies[1], // Standard for medium difficulty
     createdAt: new Date('2024-08-18'),
     updatedAt: new Date('2024-08-18'),
   },
@@ -72,6 +95,7 @@ const mockTopics: Topic[] = [
     masteryLevel: 'Intermediate',
     mustWin: false,
     isArchived: false,
+    revisionFrequency: revisionFrequencies[0], // Light for low difficulty
     createdAt: new Date('2024-08-25'),
     updatedAt: new Date('2024-08-25'),
   },

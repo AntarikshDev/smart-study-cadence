@@ -123,14 +123,22 @@ const AdminHub = () => {
   const downloadTemplate = (type: 'subjects' | 'topics') => {
     const templates = {
       subjects: 'subject_name,description,category\nMathematics,"Advanced mathematics topics",STEM\nPhysics,"Physics concepts and theories",STEM',
-      topics: 'subject,topic_title,sub_topic,difficulty,estimated_minutes\nMathematics,"Calculus - Differentiation","Chain Rule",3,45\nPhysics,"Mechanics - Newton\'s Laws","First Law",2,30'
+      topics: `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency
+Mathematics,"Differential Calculus","Chain Rule",45,5,4,Intermediate,true,Intensive
+Mathematics,"Integral Calculus","Integration by Parts",60,4,3,Beginner,false,Standard
+Physics,"Quantum Mechanics","Wave-Particle Duality",75,5,5,Beginner,true,Intensive
+Physics,"Classical Mechanics","Newton's Laws",30,3,2,Intermediate,false,Light
+Chemistry,"Organic Chemistry","Reaction Mechanisms",50,4,4,Beginner,true,Intensive
+Biology,"Cell Biology","Mitosis and Meiosis",25,3,2,Advanced,false,Light
+Computer Science,"Data Structures","Binary Trees",40,4,3,Intermediate,false,Standard
+English,"Literature","Shakespearean Analysis",35,3,3,Intermediate,false,Standard`
     };
     
     const blob = new Blob([templates[type]], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${type}_template.csv`;
+    a.download = type === 'topics' ? 'comprehensive_topics_template.csv' : `${type}_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -330,75 +338,54 @@ const AdminHub = () => {
 
         {/* Subject Management Tab */}
         <TabsContent value="subjects" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Upload Subjects */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Upload Subjects
-                </CardTitle>
-                <CardDescription>
-                  Upload a CSV file containing subject information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    onClick={() => handleFileUpload('subjects')}
-                    className="w-full"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Upload Subjects CSV
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => downloadTemplate('subjects')}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Template
-                  </Button>
+          {/* Upload Topics - Single comprehensive CSV */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Upload Topics & Subjects
+              </CardTitle>
+              <CardDescription>
+                Upload a comprehensive CSV file containing all topic and subject data. Subjects will be auto-extracted from the topic data.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={() => handleFileUpload('topics')}
+                  className="w-full"
+                  size="lg"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Upload Comprehensive Topics CSV
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => downloadTemplate('topics')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Enhanced Template
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Required Fields:</div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>subject:</strong> Subject name (auto-populates subject dropdown)</p>
+                  <p><strong>topic_title:</strong> Main topic name</p>
+                  <p><strong>sub_topic:</strong> Specific sub-topic or chapter</p>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  CSV should include: subject_name, description, category
+                <div className="text-sm font-medium mt-3">Optional Fields (with defaults):</div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>estimated_minutes:</strong> Study time (default: 30)</p>
+                  <p><strong>weightage:</strong> Exam importance 1-5 (default: 3)</p>
+                  <p><strong>difficulty:</strong> Learning difficulty 1-5 (default: 3)</p>
+                  <p><strong>mastery_level:</strong> Beginner/Intermediate/Advanced/Mastered (default: Beginner)</p>
+                  <p><strong>must_win:</strong> true/false for critical topics (default: false)</p>
+                  <p><strong>revision_frequency:</strong> Light/Standard/Intensive (auto-calculated from weightage+difficulty)</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Upload Topics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Upload Topics
-                </CardTitle>
-                <CardDescription>
-                  Upload a CSV file containing topic information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    onClick={() => handleFileUpload('topics')}
-                    className="w-full"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Upload Topics CSV
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => downloadTemplate('topics')}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Template
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  CSV should include: subject, topic_title, sub_topic, difficulty, estimated_minutes
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Current Subjects */}
           <Card>

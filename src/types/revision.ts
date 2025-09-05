@@ -1,5 +1,11 @@
 // Data types for Revision Planner
 
+export interface RevisionFrequency {
+  type: 'Light' | 'Standard' | 'Intensive' | 'Custom';
+  intervals: number[]; // Days between revisions
+  description: string;
+}
+
 export interface Topic {
   id: string;
   subject: string;
@@ -7,11 +13,12 @@ export interface Topic {
   subTopic: string;
   firstStudied: Date | null;
   estimatedMinutes: number;
-  weightage: number; // 1-5
-  difficulty: number; // 1-5
+  weightage: number; // 1-5 (Exam importance: 1=Minor topic, 5=Critical for exam)
+  difficulty: number; // 1-5 (Learning difficulty: 1=Easy to master, 5=Very challenging)
   masteryLevel: 'Beginner' | 'Intermediate' | 'Advanced' | 'Mastered';
   mustWin: boolean;
   isArchived: boolean;
+  revisionFrequency: RevisionFrequency;
   createdAt: Date;
   updatedAt: Date;
 }
