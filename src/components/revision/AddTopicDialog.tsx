@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Combobox } from '@/components/ui/combobox';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Topic } from '@/types/revision';
+import { getTopicsBySubject } from '@/data/topicData';
 
 interface AddTopicDialogProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
   const [formData, setFormData] = useState({
     subject: '',
     title: '',
+    subTopic: '',
     firstStudied: new Date(),
     estimatedMinutes: 30,
     weightage: 3,
@@ -43,7 +46,7 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.subject || !formData.title) {
+    if (!formData.subject || !formData.title || !formData.subTopic) {
       return;
     }
 
@@ -53,6 +56,7 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
     setFormData({
       subject: '',
       title: '',
+      subTopic: '',
       firstStudied: new Date(),
       estimatedMinutes: 30,
       weightage: 3,
@@ -69,6 +73,7 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
     setFormData({
       subject: '',
       title: '',
+      subTopic: '',
       firstStudied: new Date(),
       estimatedMinutes: 30,
       weightage: 3,
@@ -79,6 +84,15 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
     });
     onClose();
   };
+
+  // Get available topics based on selected subject
+  const availableTopics = useMemo(() => {
+    if (!formData.subject) return [];
+    return getTopicsBySubject(formData.subject).map(topic => ({
+      label: topic,
+      value: topic
+    }));
+  }, [formData.subject]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -126,14 +140,28 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
             </div>
           </div>
 
-          {/* Topic Title */}
+          {/* Topic Title - Searchable Dropdown */}
           <div className="space-y-2">
             <Label htmlFor="title">Topic Title *</Label>
-            <Input
-              id="title"
+            <Combobox
+              options={availableTopics}
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g., Differential Calculus, Quantum Mechanics"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, title: value }))}
+              placeholder={formData.subject ? "Search or select topic..." : "Select subject first"}
+              searchPlaceholder="Search topics..."
+              emptyMessage="No topics found for this subject."
+              className="w-full"
+            />
+          </div>
+
+          {/* Sub Topic */}
+          <div className="space-y-2">
+            <Label htmlFor="subTopic">Sub Topic *</Label>
+            <Input
+              id="subTopic"
+              value={formData.subTopic}
+              onChange={(e) => setFormData(prev => ({ ...prev, subTopic: e.target.value }))}
+              placeholder="e.g., Chain Rule, Wave-Particle Duality"
               required
             />
           </div>

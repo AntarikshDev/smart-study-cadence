@@ -4,6 +4,7 @@ export interface Topic {
   id: string;
   subject: string;
   title: string;
+  subTopic: string;
   firstStudied: Date | null;
   estimatedMinutes: number;
   weightage: number; // 1-5

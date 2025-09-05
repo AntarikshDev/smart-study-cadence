@@ -10,6 +10,7 @@ import Planner from "./pages/Planner";
 import Analytics from "./pages/Analytics";
 import Leaderboards from "./pages/Leaderboards";
 import Settings from "./pages/Settings";
+import AdminHub from "./pages/AdminHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="analytics" element={<Analytics />} />
             <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="admin" element={<AdminHub />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
