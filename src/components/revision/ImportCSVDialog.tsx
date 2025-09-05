@@ -28,15 +28,22 @@ const revisionFrequencies: RevisionFrequency[] = [
   }
 ];
 
-const getRevisionFrequencyFromString = (freqString: string, weightage: number, difficulty: number): RevisionFrequency => {
-  const normalizedString = freqString?.toLowerCase();
+const getRevisionFrequencyFromInput = (input: string | number, weightage: number, difficulty: number): RevisionFrequency => {
+  // Handle numeric input (3, 4, 5)
+  if (typeof input === 'number' || /^\d+$/.test(input)) {
+    const num = typeof input === 'number' ? input : parseInt(input);
+    if (num === 3) return revisionFrequencies[0]; // Light (3 revisions)
+    if (num === 4) return revisionFrequencies[1]; // Standard (4 revisions)  
+    if (num === 5) return revisionFrequencies[2]; // Intensive (5 revisions)
+  }
   
-  // If specific frequency is mentioned, use it
+  // Handle string input
+  const normalizedString = input?.toString().toLowerCase();
   if (normalizedString === 'light') return revisionFrequencies[0];
   if (normalizedString === 'standard') return revisionFrequencies[1];
   if (normalizedString === 'intensive') return revisionFrequencies[2];
   
-  // Otherwise calculate based on weightage and difficulty
+  // Auto-calculate based on weightage and difficulty if no valid input
   const score = weightage + difficulty;
   if (score <= 4) return revisionFrequencies[0]; // Light
   if (score <= 7) return revisionFrequencies[1]; // Standard
@@ -49,11 +56,11 @@ interface ImportCSVDialogProps {
   onImport: (topics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
 }
 
-const sampleCSV = `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency
-Mathematics,"Differential Calculus","Chain Rule",45,5,4,Intermediate,true,Intensive
-Physics,"Quantum Mechanics","Wave-Particle Duality",60,5,5,Beginner,true,Intensive
-Chemistry,"Organic Chemistry","Reaction Mechanisms",30,4,3,Advanced,false,Standard
-Biology,"Cell Biology","Mitosis and Meiosis",25,3,2,Intermediate,false,Light`;
+const sampleCSV = `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes
+Mathematics,"Differential Calculus","Chain Rule",45,5,4,Intermediate,true,5,2024-01-15,2024-01-22,"Focus on composite functions"
+Physics,"Quantum Mechanics","Wave-Particle Duality",60,5,5,Beginner,true,5,2024-01-10,2024-01-17,"Review experiments"
+Chemistry,"Organic Chemistry","Reaction Mechanisms",30,4,3,Advanced,false,4,2024-01-12,2024-01-19,"Practice mechanisms"
+Biology,"Cell Biology","Mitosis and Meiosis",25,3,2,Intermediate,false,3,2024-01-08,2024-01-15,"Understand phases"`;
 
 export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogProps) => {
   const [csvContent, setCsvContent] = useState('');
@@ -70,7 +77,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
       }
 
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
-      const requiredHeaders = ['subject', 'topic_title', 'sub_topic'];
+      const requiredHeaders = ['subject', 'topic_title']; // Only subject and topic_title are required
       const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
       
       if (missingHeaders.length > 0) {
@@ -94,17 +101,21 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
           row[header] = values[index];
         });
 
-        // Validate required fields
-        if (!row.subject || !row.topic_title || !row.sub_topic) {
-          newErrors.push(`Row ${i + 1}: Subject, topic_title, and sub_topic are required`);
+        // Validate required fields (only subject and topic_title are required)
+        if (!row.subject || !row.topic_title) {
+          newErrors.push(`Row ${i + 1}: Subject and topic_title are required`);
           continue;
         }
+
+        // Parse dates if provided
+        const firstStudiedDate = row.first_studied ? new Date(row.first_studied) : new Date();
+        const dueDateParsed = row.due_date ? new Date(row.due_date) : null;
 
         // Map CSV fields to Topic interface
         const processedRow = {
           subject: row.subject?.replace(/"/g, ''),
           title: row.topic_title?.replace(/"/g, ''),
-          subTopic: row.sub_topic?.replace(/"/g, ''),
+          subTopic: row.sub_topic?.replace(/"/g, '') || '', // Optional field
           estimatedMinutes: parseInt(row.estimated_minutes) || 30,
           weightage: Math.max(1, Math.min(5, parseInt(row.weightage) || 3)),
           difficulty: Math.max(1, Math.min(5, parseInt(row.difficulty) || 3)),
@@ -112,13 +123,13 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
             ? row.mastery_level : 'Beginner',
           mustWin: row.must_win?.toLowerCase() === 'true',
           isArchived: false,
-          firstStudied: new Date(),
-          revisionFrequency: getRevisionFrequencyFromString(row.revision_frequency, parseInt(row.weightage) || 3, parseInt(row.difficulty) || 3)
+          firstStudied: firstStudiedDate,
+          dueDate: dueDateParsed,
+          notes: row.notes?.replace(/"/g, '') || '',
+          revisionFrequency: getRevisionFrequencyFromInput(row.revision_frequency, parseInt(row.weightage) || 3, parseInt(row.difficulty) || 3)
         };
 
         validRows.push(processedRow);
-
-        validRows.push(row);
       }
 
       setErrors(newErrors);
@@ -216,10 +227,11 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
                     Upload a comprehensive CSV file with topic and revision data:
                   </p>
                   <div className="text-xs space-y-1 text-muted-foreground">
-                    <p><strong>Required:</strong> subject, topic_title, sub_topic</p>
-                    <p><strong>Optional:</strong> estimated_minutes (default: 30), weightage (1-5, default: 3), 
+                    <p><strong>Required:</strong> subject, topic_title</p>
+                    <p><strong>Optional:</strong> sub_topic, estimated_minutes (default: 30), weightage (1-5, default: 3), 
                        difficulty (1-5, default: 3), mastery_level (Beginner/Intermediate/Advanced/Mastered, default: Beginner), 
-                       must_win (true/false, default: false), revision_frequency (Light/Standard/Intensive, auto-calculated)</p>
+                       must_win (true/false, default: false), revision_frequency (3/4/5 for Light/Standard/Intensive, auto-calculated),
+                       first_studied (YYYY-MM-DD), due_date (YYYY-MM-DD), notes</p>
                     <p><strong>Note:</strong> Subjects are automatically extracted from the subject column to populate dropdowns.</p>
                   </div>
                 </div>
@@ -250,7 +262,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
               id="csvContent"
               value={csvContent}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win&#10;Mathematics,Differential Calculus,Chain Rule,45,5,4,Intermediate,true"
+              placeholder="subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes&#10;Mathematics,Differential Calculus,Chain Rule,45,5,4,Intermediate,true,5,2024-01-15,2024-01-22,Focus on composite functions"
               className="min-h-32 font-mono text-sm"
             />
           </div>
