@@ -58,9 +58,9 @@ interface ImportCSVDialogProps {
 
 const sampleCSV = `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes
 Mathematics,"Differential Calculus","Chain Rule",45,5,4,Intermediate,true,5,2024-01-15,2024-01-22,"Focus on composite functions"
-Physics,"Quantum Mechanics","Wave-Particle Duality",60,5,5,Beginner,true,5,2024-01-10,2024-01-17,"Review experiments"
+Physics,"Quantum Mechanics",,60,5,5,Beginner,true,5,2024-01-10,2024-01-17,"Review experiments"
 Chemistry,"Organic Chemistry","Reaction Mechanisms",30,4,3,Advanced,false,4,2024-01-12,2024-01-19,"Practice mechanisms"
-Biology,"Cell Biology","Mitosis and Meiosis",25,3,2,Intermediate,false,3,2024-01-08,2024-01-15,"Understand phases"`;
+Biology,"Cell Biology",,25,3,2,Intermediate,false,3,2024-01-08,2024-01-15,"Understand phases"`;
 
 export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogProps) => {
   const [csvContent, setCsvContent] = useState('');
@@ -262,7 +262,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
               id="csvContent"
               value={csvContent}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes&#10;Mathematics,Differential Calculus,Chain Rule,45,5,4,Intermediate,true,5,2024-01-15,2024-01-22,Focus on composite functions"
+              placeholder="subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes&#10;Mathematics,Differential Calculus,Chain Rule,45,5,4,Intermediate,true,5,2024-01-15,2024-01-22,Focus on composite functions&#10;Physics,Quantum Mechanics,,60,5,5,Beginner,true,5,2024-01-10,2024-01-17,Review experiments"
               className="min-h-32 font-mono text-sm"
             />
           </div>
