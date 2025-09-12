@@ -53,7 +53,7 @@ const getRevisionFrequencyFromInput = (input: string | number, weightage: number
 interface ImportCSVDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (topics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
+  onImport: (topics: Omit<Topic, 'id'>[]) => Promise<void>;
 }
 
 const sampleCSV = `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes
@@ -67,6 +67,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const parseCSV = useCallback((content: string) => {
     try {
@@ -165,7 +166,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
     parseCSV(content);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (previewData.length === 0) {
       toast({
         title: "No data to import",
@@ -175,12 +176,23 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
       return;
     }
 
-    onImport(previewData);
-    toast({
-      title: "Topics imported successfully!",
-      description: `Imported ${previewData.length} topic(s).`,
-    });
-    handleClose();
+    setImporting(true);
+    try {
+      await onImport(previewData);
+      toast({
+        title: "Topics imported successfully!",
+        description: `Imported ${previewData.length} topic(s).`,
+      });
+      handleClose();
+    } catch (error) {
+      toast({
+        title: "Import failed",
+        description: "Failed to import topics. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleClose = () => {
@@ -188,6 +200,7 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
     setPreviewData([]);
     setErrors([]);
     setFile(null);
+    setImporting(false);
     onClose();
   };
 
@@ -331,9 +344,9 @@ export const ImportCSVDialog = ({ isOpen, onClose, onImport }: ImportCSVDialogPr
           </Button>
           <Button 
             onClick={handleImport} 
-            disabled={previewData.length === 0 || errors.length > 0}
+            disabled={previewData.length === 0 || errors.length > 0 || importing}
           >
-            Import {previewData.length} Topic(s)
+            {importing ? 'Importing...' : `Import ${previewData.length} Topic(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

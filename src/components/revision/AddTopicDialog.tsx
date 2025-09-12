@@ -20,7 +20,7 @@ import { getTopicsBySubject } from '@/data/topicData';
 interface AddTopicDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (topic: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onAdd: (topic: Omit<Topic, 'id'>) => Promise<void>;
 }
 
 const subjects = [
@@ -93,31 +93,40 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
   });
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.subject || !formData.title || !formData.subTopic) {
       return;
     }
 
-    onAdd(formData);
-    
-    // Reset form
-    setFormData({
-      subject: '',
-      title: '',
-      subTopic: '',
-      firstStudied: new Date(),
-      estimatedMinutes: 30,
-      weightage: 3,
-      difficulty: 3,
-      masteryLevel: 'Beginner',
-      mustWin: false,
-      isArchived: false,
-      revisionFrequency: revisionFrequencies[1],
-    });
-    
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onAdd(formData);
+      
+      // Reset form
+      setFormData({
+        subject: '',
+        title: '',
+        subTopic: '',
+        firstStudied: new Date(),
+        estimatedMinutes: 30,
+        weightage: 3,
+        difficulty: 3,
+        masteryLevel: 'Beginner',
+        mustWin: false,
+        isArchived: false,
+        revisionFrequency: revisionFrequencies[1],
+      });
+      
+      onClose();
+    } catch (error) {
+      // Error is handled by the parent component
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -412,8 +421,8 @@ export const AddTopicDialog = ({ isOpen, onClose, onAdd }: AddTopicDialogProps) 
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add Topic
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Topic'}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchLeaderboard, fetchComparison } from '@/store/slices/analyticsSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,14 +22,12 @@ import {
   Activity,
   BarChart3
 } from 'lucide-react';
-import { mockApi } from '@/lib/mockApi';
 import { LeaderboardEntry, ComparisonData } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
 
 export default function Leaderboards() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [comparison, setComparison] = useState<ComparisonData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { leaderboard, comparison, loading, error } = useAppSelector((state) => state.analytics);
   const [activeTab, setActiveTab] = useState('subject');
   const [timeWindow, setTimeWindow] = useState('30d');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -38,21 +38,16 @@ export default function Leaderboards() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      const [leaderboardData, comparisonData] = await Promise.all([
-        mockApi.getLeaderboard(activeTab, timeWindow),
-        mockApi.getComparison(activeTab, 'current-user', timeWindow)
+      await Promise.all([
+        dispatch(fetchLeaderboard({ scope: activeTab, window: timeWindow })).unwrap(),
+        dispatch(fetchComparison({ scope: activeTab, id: 'current-user', window: timeWindow })).unwrap()
       ]);
-      setLeaderboard(leaderboardData);
-      setComparison(comparisonData);
     } catch (error) {
       toast({
         title: "Error loading leaderboards",
         description: "Failed to load leaderboard data. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 

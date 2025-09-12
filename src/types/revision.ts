@@ -105,8 +105,9 @@ export interface KPIData {
 
 export interface LeaderboardEntry {
   id: string;
-  name: string;
   rank: number;
+  name: string;
+  avatar?: string;
   onTimeRate: number;
   weeklyMinutes: number;
   avgTimePerRevision: number;
@@ -140,4 +141,8 @@ export interface UserSettings {
   timerQuickPresets: number[]; // minutes
   anonymizeOnLeaderboards: boolean;
   timezone: string;
+  notifications: boolean;
+  darkMode: boolean;
+  focusDuration: number;
+  reminderFrequency: string;
 }

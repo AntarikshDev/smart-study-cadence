@@ -19,7 +19,7 @@ interface FocusTimerProps {
     cycle: number;
     estimatedMinutes: number;
   };
-  onComplete: (rating: 'Again' | 'Hard' | 'Good' | 'Easy', notes: string, actualMinutes: number) => void;
+  onComplete: (rating: 'Again' | 'Hard' | 'Good' | 'Easy', notes: string, actualMinutes: number) => Promise<void>;
 }
 
 export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerProps) => {
@@ -125,13 +125,17 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
     }
   };
 
-  const confirmStop = () => {
+  const confirmStop = async () => {
     const actualMinutes = Math.ceil((originalTime - timeLeft) / 60);
     if (actualMinutes > 0) {
       setIsActive(false);
       setIsPaused(false);
       setPausedAt(null);
-      onComplete('Good', notes, actualMinutes);
+      try {
+        await onComplete('Good', notes, actualMinutes);
+      } catch (error) {
+        // Error handled by parent
+      }
     } else {
       toast({
         title: "No time recorded",
@@ -161,12 +165,16 @@ export const FocusTimer = ({ isOpen, onClose, topic, onComplete }: FocusTimerPro
     }
   };
 
-  const handleFinish = (rating: 'Again' | 'Hard' | 'Good' | 'Easy') => {
+  const handleFinish = async (rating: 'Again' | 'Hard' | 'Good' | 'Easy') => {
     const actualMinutes = Math.ceil((originalTime - timeLeft) / 60);
     setIsActive(false);
     setIsPaused(false);
     setPausedAt(null);
-    onComplete(rating, notes, actualMinutes);
+    try {
+      await onComplete(rating, notes, actualMinutes);
+    } catch (error) {
+      // Error handled by parent
+    }
   };
 
   const progress = ((originalTime - timeLeft) / originalTime) * 100;

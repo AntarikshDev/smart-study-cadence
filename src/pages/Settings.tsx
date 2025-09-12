@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { updateUserProfile } from '@/store/slices/userSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,41 +20,40 @@ import {
   Save,
   Globe
 } from 'lucide-react';
-import { mockApi } from '@/lib/mockApi';
 import { UserSettings } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
 
 export default function Settings() {
+  const dispatch = useAppDispatch();
+  const { currentUser, loading } = useAppSelector((state) => state.user);
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      const userSettings = await mockApi.getSettings();
-      setSettings(userSettings);
-    } catch (error) {
-      toast({
-        title: "Error loading settings",
-        description: "Failed to load settings. Please try again.",
-        variant: "destructive",
+    if (currentUser) {
+      setSettings({
+        dailyCapacityMinutes: 60,
+        pushWindowStart: '09:00',
+        pushWindowEnd: '21:00',
+        enableCascadeSnoozByDefault: true,
+        timerQuickPresets: [15, 30, 45, 60],
+        timezone: 'Asia/Kolkata',
+        anonymizeOnLeaderboards: false,
+        notifications: true,
+        darkMode: false,
+        focusDuration: 25,
+        reminderFrequency: 'hourly',
+        ...currentUser.settings
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const handleSave = async () => {
     if (!settings) return;
     
     try {
       setSaving(true);
-      await mockApi.updateSettings(settings);
+      await dispatch(updateUserProfile({ settings })).unwrap();
       toast({
         title: "Settings saved",
         description: "Your preferences have been updated successfully.",

@@ -16,7 +16,7 @@ interface EditTopicDialogProps {
   isOpen: boolean;
   onClose: () => void;
   topic: Topic | null;
-  onSave: (topicId: string, updates: Partial<Topic>) => void;
+  onSave: (topicId: string, updates: Partial<Topic>) => Promise<void>;
 }
 
 const subjects = [
@@ -38,6 +38,7 @@ export const EditTopicDialog = ({ isOpen, onClose, topic, onSave }: EditTopicDia
     mustWin: false,
     isArchived: false,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
@@ -56,15 +57,22 @@ export const EditTopicDialog = ({ isOpen, onClose, topic, onSave }: EditTopicDia
     }
   }, [topic]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.subject || !formData.title || !topic) {
       return;
     }
 
-    onSave(topic.id, formData);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onSave(topic.id, formData);
+      onClose();
+    } catch (error) {
+      // Error is handled by the parent component
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -255,8 +263,8 @@ export const EditTopicDialog = ({ isOpen, onClose, topic, onSave }: EditTopicDia
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              Save Changes
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>
