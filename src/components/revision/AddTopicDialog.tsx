@@ -20,7 +20,7 @@ import { getTopicsBySubject } from '@/data/topicData';
 interface AddTopicDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (topic: Omit<Topic, 'id'>) => Promise<void>;
+  onAdd: (topic: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
 const subjects = [

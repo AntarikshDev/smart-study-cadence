@@ -361,7 +361,7 @@ export const mockApi = {
   },
 
   // Settings
-  async getSettings(): Promise<UserSettings> {
+async getSettings(): Promise<UserSettings> {
     await new Promise(resolve => setTimeout(resolve, 200));
     return {
       dailyCapacityMinutes: 45,
@@ -371,6 +371,10 @@ export const mockApi = {
       timerQuickPresets: [15, 30, 45, 60],
       anonymizeOnLeaderboards: false,
       timezone: 'Asia/Kolkata',
+      notifications: true,
+      darkMode: false,
+      focusDuration: 25,
+      reminderFrequency: 'daily',
     };
   },
 

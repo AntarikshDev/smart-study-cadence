@@ -65,22 +65,22 @@ export default function TopicsManager() {
     }
   };
 
-  const handleAddTopic = async (topicData: Omit<Topic, 'id'>) => {
-    try {
-      await dispatch(addTopic(topicData)).unwrap();
-      toast({
-        title: "Topic added",
-        description: "New topic has been added successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add topic. Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
+const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => {
+  try {
+    await dispatch(addTopic(topicData)).unwrap();
+    toast({
+      title: "Topic added",
+      description: "New topic has been added successfully.",
+    });
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to add topic. Please try again.",
+      variant: "destructive",
+    });
+    throw error;
+  }
+};
 
   const handleEditTopic = async (topicId: string, updates: Partial<Topic>) => {
     try {
@@ -115,14 +115,14 @@ export default function TopicsManager() {
     }
   };
 
-  const handleImportTopics = async (importedTopics: Omit<Topic, 'id'>[]) => {
-    try {
-      const promises = importedTopics.map(topic => dispatch(addTopic(topic)).unwrap());
-      await Promise.all(promises);
-    } catch (error) {
-      throw error;
-    }
-  };
+const handleImportTopics = async (importedTopics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  try {
+    const promises = importedTopics.map(topic => dispatch(addTopic(topic)).unwrap());
+    await Promise.all(promises);
+  } catch (error) {
+    throw error;
+  }
+};
 
   const openEditDialog = (topic: Topic) => {
     setSelectedTopic(topic);

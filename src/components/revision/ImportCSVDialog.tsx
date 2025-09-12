@@ -53,7 +53,7 @@ const getRevisionFrequencyFromInput = (input: string | number, weightage: number
 interface ImportCSVDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (topics: Omit<Topic, 'id'>[]) => Promise<void>;
+  onImport: (topics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => Promise<void>;
 }
 
 const sampleCSV = `subject,topic_title,sub_topic,estimated_minutes,weightage,difficulty,mastery_level,must_win,revision_frequency,first_studied,due_date,notes

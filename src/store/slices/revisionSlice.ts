@@ -56,7 +56,7 @@ export const fetchTopics = createAsyncThunk(
 
 export const addTopic = createAsyncThunk(
   'revision/addTopic',
-  async (topic: Omit<Topic, 'id'>, { rejectWithValue }) => {
+  async (topic: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
     try {
       const response = await fetch('/api/topics', {
         method: 'POST',

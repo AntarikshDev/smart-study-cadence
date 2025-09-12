@@ -27,6 +27,10 @@ export const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
     timerQuickPresets: [15, 30, 45, 60],
     anonymizeOnLeaderboards: false,
     timezone: 'Asia/Kolkata',
+    notifications: true,
+    darkMode: false,
+    focusDuration: 25,
+    reminderFrequency: 'daily',
   });
   const [loading, setLoading] = useState(false);
   const [newPreset, setNewPreset] = useState('');

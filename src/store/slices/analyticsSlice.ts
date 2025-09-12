@@ -1,40 +1,5 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-interface KPIData {
-  dueToday: number;
-  overdue: number;
-  completedToday: number;
-  weeklyMinutes: number;
-  currentStreak: number;
-  bestStreak: number;
-  onTimeRate: number;
-  avgLateness: number;
-}
-
-interface AnalyticsData {
-  kpis: KPIData;
-  backlogBurndown: Array<{ date: string; backlog: number; completed: number }>;
-  loadForecast: Array<{ date: string; predicted: number; actual?: number }>;
-  masteryDistribution: Array<{ level: string; count: number; percentage: number }>;
-  snoozePattern: Array<{ day: string; hour: number; count: number }>;
-  topRevised: Array<{ topic: string; count: number }>;
-  topTimeSpent: Array<{ topic: string; minutes: number }>;
-}
-
-interface LeaderboardEntry {
-  rank: number;
-  name: string;
-  score: number;
-  avatar?: string;
-  change: number;
-}
-
-interface ComparisonData {
-  userScore: number;
-  averageScore: number;
-  percentile: number;
-  comparison: 'above' | 'below' | 'equal';
-}
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { AnalyticsData, LeaderboardEntry, ComparisonData } from '@/types/revision';
 
 interface AnalyticsState {
   data: AnalyticsData | null;
@@ -42,7 +7,7 @@ interface AnalyticsState {
   comparison: ComparisonData | null;
   loading: boolean;
   error: string | null;
-  timeRange: '7d' | '30d' | '90d' | '1y';
+  timeRange: '7d' | '30d' | '90d' | '1y' | 'all';
 }
 
 const initialState: AnalyticsState = {
