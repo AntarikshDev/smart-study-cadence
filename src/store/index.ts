@@ -2,11 +2,15 @@ import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import revisionSlice from './slices/revisionSlice';
 import userSlice from './slices/userSlice';
+import analyticsSlice from './slices/analyticsSlice';
+import adminSlice from './slices/adminSlice';
 
 export const store = configureStore({
   reducer: {
     revision: revisionSlice,
     user: userSlice,
+    analytics: analyticsSlice,
+    admin: adminSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
