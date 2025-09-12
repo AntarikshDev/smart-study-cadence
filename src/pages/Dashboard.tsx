@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchTopics, fetchSchedules, snoozeSchedule } from '@/store/slices/revisionSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +8,7 @@ import { KpiCard } from '@/components/revision/KpiCard';
 import { TopicCard } from '@/components/revision/TopicCard';
 import { MotivationalSection } from '@/components/revision/MotivationalSection';
 import { SnoozeFloatingButton } from '@/components/revision/SnoozeFloatingButton';
+import { mockApi } from '@/lib/mockApi';
 import { DashboardData, TopicCardData } from '@/types/revision';
 import { 
   Calendar,
@@ -26,56 +25,28 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { topics, schedules, loading, error } = useAppSelector((state) => state.revision);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description: error,
-        variant: "destructive",
-      });
-    }
-  }, [error]);
-
   const loadDashboardData = async () => {
     try {
-      await Promise.all([
-        dispatch(fetchTopics()).unwrap(),
-        dispatch(fetchSchedules()).unwrap()
-      ]);
-      
-      // Process data to create dashboard structure
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      // This would typically come from the backend as a computed dashboard endpoint
-      const mockDashboardData: DashboardData = {
-        date: today,
-        dueToday: [], // Will be populated from topics/schedules
-        overdueCount: 0,
-        completedToday: 0,
-        weeklyMinutes: 0,
-        currentStreak: 0,
-        bestStreak: 0,
-        onTimeRate: 0,
-        upcomingDays: []
-      };
-      
-      setDashboardData(mockDashboardData);
+      setLoading(true);
+      const data = await mockApi.getDashboardData();
+      setDashboardData(data);
     } catch (error) {
       toast({
         title: "Error loading dashboard",
         description: "Failed to load dashboard data. Please try again.",
         variant: "destructive",
       });
+      console.error('Dashboard load error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,9 +54,9 @@ export default function Dashboard() {
     navigate(`/focus/${topicId}`);
   };
 
-  const handleSnooze = async (scheduleId: string, days: number, cascade: boolean) => {
+const handleSnooze = async (scheduleId: string, days: number, cascade: boolean) => {
     try {
-      await dispatch(snoozeSchedule({ scheduleId, days, cascade })).unwrap();
+      await mockApi.snoozeTopic(scheduleId, days, cascade);
       toast({
         title: "Topic snoozed",
         description: `Snoozed for ${days} day(s)${cascade ? ' with cascade' : ''}`,
@@ -108,7 +79,7 @@ export default function Dashboard() {
     try {
       // Snooze all pending topics
       const snoozePromises = (dashboardData?.dueToday || []).map(topic =>
-        dispatch(snoozeSchedule({ scheduleId: topic.scheduleId, days, cascade })).unwrap()
+        mockApi.snoozeTopic(topic.scheduleId, days, cascade)
       );
       await Promise.all(snoozePromises);
       loadDashboardData(); // Refresh data
