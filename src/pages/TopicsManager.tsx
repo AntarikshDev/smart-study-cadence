@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchTopics, addTopic, updateTopic, deleteTopic } from '@/store/slices/revisionSlice';
+import { 
+  useGetTopicsQuery,
+  useAddTopicMutation,
+  useUpdateTopicMutation,
+  useDeleteTopicMutation
+} from '@/store/api/revisionApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,10 +35,12 @@ import { Topic } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
 
 export default function TopicsManager() {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { topics, loading, error } = useAppSelector((state) => state.revision);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { data: topics = [], isLoading, error } = useGetTopicsQuery();
+  const [addTopic] = useAddTopicMutation();
+  const [updateTopic] = useUpdateTopicMutation();
+  const [deleteTopic] = useDeleteTopicMutation();
+const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [selectedMastery, setSelectedMastery] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
@@ -43,48 +49,35 @@ export default function TopicsManager() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
-  useEffect(() => {
-    loadTopics();
-  }, []);
+  // Show error toast when error occurs
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load topics",
+      variant: "destructive",
+    });
+  }
 
-  useEffect(() => {
-    if (error) {
+const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await addTopic(topicData).unwrap();
+      toast({
+        title: "Topic added",
+        description: "New topic has been added successfully.",
+      });
+    } catch (error) {
       toast({
         title: "Error",
-        description: error,
+        description: "Failed to add topic. Please try again.",
         variant: "destructive",
       });
-    }
-  }, [error]);
-
-  const loadTopics = async () => {
-    try {
-      await dispatch(fetchTopics()).unwrap();
-    } catch (error) {
-      // Error handled by Redux and displayed via useEffect
+      throw error;
     }
   };
 
-const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>) => {
-  try {
-    await dispatch(addTopic(topicData)).unwrap();
-    toast({
-      title: "Topic added",
-      description: "New topic has been added successfully.",
-    });
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: "Failed to add topic. Please try again.",
-      variant: "destructive",
-    });
-    throw error;
-  }
-};
-
   const handleEditTopic = async (topicId: string, updates: Partial<Topic>) => {
     try {
-      await dispatch(updateTopic({ id: topicId, updates })).unwrap();
+      await updateTopic({ id: topicId, updates }).unwrap();
       toast({
         title: "Topic updated",
         description: "Topic has been updated successfully.",
@@ -101,7 +94,7 @@ const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updat
 
   const handleDeleteTopic = async (topicId: string) => {
     try {
-      await dispatch(deleteTopic(topicId)).unwrap();
+      await deleteTopic(topicId).unwrap();
       toast({
         title: "Topic deleted",
         description: "Topic has been deleted successfully.",
@@ -115,14 +108,14 @@ const handleAddTopic = async (topicData: Omit<Topic, 'id' | 'createdAt' | 'updat
     }
   };
 
-const handleImportTopics = async (importedTopics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-  try {
-    const promises = importedTopics.map(topic => dispatch(addTopic(topic)).unwrap());
-    await Promise.all(promises);
-  } catch (error) {
-    throw error;
-  }
-};
+  const handleImportTopics = async (importedTopics: Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    try {
+      const promises = importedTopics.map(topic => addTopic(topic).unwrap());
+      await Promise.all(promises);
+    } catch (error) {
+      throw error;
+    }
+  };
 
   const openEditDialog = (topic: Topic) => {
     setSelectedTopic(topic);
@@ -145,7 +138,7 @@ const handleImportTopics = async (importedTopics: Omit<Topic, 'id' | 'createdAt'
   // Get unique subjects for filter
   const subjects = [...new Set(topics.map(topic => topic.subject))];
 
-  if (loading && topics.length === 0) {
+if (isLoading && topics.length === 0) {
     return <TopicsManagerSkeleton />;
   }
 

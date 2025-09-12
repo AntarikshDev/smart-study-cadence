@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { updateUserProfile } from '@/store/slices/userSlice';
+import { useState } from 'react';
+import { useGetSettingsQuery, useUpdateSettingsMutation } from '@/store/api/userApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SettingsDialog } from '@/components/revision/SettingsDialog';
 import { 
   Settings as SettingsIcon, 
-  Clock, 
   Bell, 
-  Timer, 
   Shield, 
+  Palette, 
+  Clock,
   Download,
+  Upload,
+  Trash2,
   Save,
   Globe
 } from 'lucide-react';
@@ -24,36 +24,42 @@ import { UserSettings } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
 
 export default function Settings() {
-  const dispatch = useAppDispatch();
-  const { currentUser, loading } = useAppSelector((state) => state.user);
-  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const { data: settings, isLoading, error } = useGetSettingsQuery();
+  const [updateSettings] = useUpdateSettingsMutation();
+const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      setSettings({
-        dailyCapacityMinutes: 60,
-        pushWindowStart: '09:00',
-        pushWindowEnd: '21:00',
-        enableCascadeSnoozByDefault: true,
-        timerQuickPresets: [15, 30, 45, 60],
-        timezone: 'Asia/Kolkata',
-        anonymizeOnLeaderboards: false,
-        notifications: true,
-        darkMode: false,
-        focusDuration: 25,
-        reminderFrequency: 'hourly',
-        ...currentUser.settings
+  // Show error toast when error occurs
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load settings",
+      variant: "destructive",
+    });
+  }
+
+  const handleUpdateSetting = async (key: keyof UserSettings, value: any) => {
+    try {
+      await updateSettings({ [key]: value }).unwrap();
+      toast({
+        title: "Setting updated",
+        description: "Your setting has been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update setting. Please try again.",
+        variant: "destructive",
       });
     }
-  }, [currentUser]);
+  };
 
   const handleSave = async () => {
     if (!settings) return;
     
     try {
       setSaving(true);
-      await dispatch(updateUserProfile({ settings })).unwrap();
+      await updateSettings(settings).unwrap();
       toast({
         title: "Settings saved",
         description: "Your preferences have been updated successfully.",
@@ -77,7 +83,7 @@ export default function Settings() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return <SettingsSkeleton />;
   }
 
@@ -99,270 +105,252 @@ export default function Settings() {
             <span>Settings</span>
           </h1>
           <p className="text-muted-foreground mt-1">
-            Customize your revision planner experience
+            Customize your revision experience
           </p>
         </div>
         
-        <Button 
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center space-x-2"
-        >
-          <Save className="h-4 w-4" />
-          <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            onClick={() => setShowSettingsDialog(true)}
+            className="flex items-center space-x-2"
+          >
+            <SettingsIcon className="h-4 w-4" />
+            <span>Advanced</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Study Configuration */}
+      {/* Quick Settings */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Study Time */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-primary" />
-              <span>Study Configuration</span>
+              <Clock className="h-4 w-4" />
+              <span>Study Time</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Daily Capacity (minutes)</Label>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="dailyCapacity">Daily Capacity (minutes)</Label>
               <Input
-                id="capacity"
+                id="dailyCapacity"
                 type="number"
                 value={settings.dailyCapacityMinutes}
-                onChange={(e) => setSettings({ 
-                  ...settings, 
-                  dailyCapacityMinutes: Number(e.target.value) 
-                })}
+                onChange={(e) => handleUpdateSetting('dailyCapacityMinutes', parseInt(e.target.value))}
                 min="15"
                 max="480"
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Recommended: 30-90 minutes per day for optimal retention
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <Label>Push Notification Window</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-time" className="text-sm">Start Time</Label>
-                  <Input
-                    id="start-time"
-                    type="time"
-                    value={settings.pushWindowStart}
-                    onChange={(e) => setSettings({ 
-                      ...settings, 
-                      pushWindowStart: e.target.value 
-                    })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end-time" className="text-sm">End Time</Label>
-                  <Input
-                    id="end-time"
-                    type="time"
-                    value={settings.pushWindowEnd}
-                    onChange={(e) => setSettings({ 
-                      ...settings, 
-                      pushWindowEnd: e.target.value 
-                    })}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                You'll only receive revision reminders during this window
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Enable Cascade Snooze by Default</Label>
-                <p className="text-xs text-muted-foreground">
-                  When you snooze a topic, automatically shift future revisions
-                </p>
-              </div>
-              <Switch
-                checked={settings.enableCascadeSnoozByDefault}
-                onCheckedChange={(checked) => setSettings({ 
-                  ...settings, 
-                  enableCascadeSnoozByDefault: checked 
-                })}
+                className="mt-1"
               />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Timer Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Timer className="h-5 w-5 text-warning" />
-              <span>Timer Settings</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <Label>Quick Timer Presets (minutes)</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {settings.timerQuickPresets.map((preset, index) => (
-                  <Input
-                    key={index}
-                    type="number"
-                    value={preset}
-                    onChange={(e) => {
-                      const newPresets = [...settings.timerQuickPresets];
-                      newPresets[index] = Number(e.target.value);
-                      setSettings({ ...settings, timerQuickPresets: newPresets });
-                    }}
-                    min="5"
-                    max="180"
-                    className="text-center"
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                These will appear as quick-select options in the timer
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
+            
+            <div>
+              <Label htmlFor="focusDuration">Focus Duration (minutes)</Label>
               <Select 
-                value={settings.timezone} 
-                onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+                value={settings.focusDuration?.toString()} 
+                onValueChange={(value) => handleUpdateSetting('focusDuration', parseInt(value))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                  <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                  <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                  <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
-                  <SelectItem value="Australia/Sydney">Australia/Sydney (AEST)</SelectItem>
+                  <SelectItem value="15">15 minutes</SelectItem>
+                  <SelectItem value="25">25 minutes (Pomodoro)</SelectItem>
+                  <SelectItem value="30">30 minutes</SelectItem>
+                  <SelectItem value="45">45 minutes</SelectItem>
+                  <SelectItem value="60">60 minutes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Privacy & Social */}
+        {/* Notifications */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-success" />
-              <span>Privacy & Social</span>
+              <Bell className="h-4 w-4" />
+              <span>Notifications</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Show Me Anonymously on Leaderboards</Label>
-                <p className="text-xs text-muted-foreground">
-                  Your name will be hidden from other students, but you can still see your rank
-                </p>
-              </div>
+              <Label htmlFor="notifications">Enable Notifications</Label>
               <Switch
-                checked={settings.anonymizeOnLeaderboards}
-                onCheckedChange={(checked) => setSettings({ 
-                  ...settings, 
-                  anonymizeOnLeaderboards: checked 
-                })}
+                id="notifications"
+                checked={settings.notifications}
+                onCheckedChange={(checked) => handleUpdateSetting('notifications', checked)}
               />
             </div>
+            
+            <div>
+              <Label htmlFor="reminderFreq">Reminder Frequency</Label>
+              <Select 
+                value={settings.reminderFrequency} 
+                onValueChange={(value) => handleUpdateSetting('reminderFrequency', value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="never">Never</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="realtime">Real-time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Privacy Status</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Your current privacy settings
-                  </p>
-                </div>
-                <Badge variant={settings.anonymizeOnLeaderboards ? 'success' : 'secondary'}>
-                  {settings.anonymizeOnLeaderboards ? 'Anonymous' : 'Public'}
-                </Badge>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="pushStart">Start Time</Label>
+                <Input
+                  id="pushStart"
+                  type="time"
+                  value={settings.pushWindowStart}
+                  onChange={(e) => handleUpdateSetting('pushWindowStart', e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pushEnd">End Time</Label>
+                <Input
+                  id="pushEnd"
+                  type="time"
+                  value={settings.pushWindowEnd}
+                  onChange={(e) => handleUpdateSetting('pushWindowEnd', e.target.value)}
+                  className="mt-1"
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Data Management */}
+        {/* Appearance & Privacy */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Download className="h-5 w-5 text-accent" />
-              <span>Data Management</span>
+              <Palette className="h-4 w-4" />
+              <span>Appearance & Privacy</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <Label>Export Your Data</Label>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Download all your revision logs, session data, and progress statistics
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleExport}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export to CSV
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>Data Summary</Label>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="p-3 bg-muted/50 rounded">
-                    <div className="font-medium">Total Sessions</div>
-                    <div className="text-muted-foreground">42 completed</div>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded">
-                    <div className="font-medium">Study Time</div>
-                    <div className="text-muted-foreground">18h 45m total</div>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded">
-                    <div className="font-medium">Topics</div>
-                    <div className="text-muted-foreground">17 active</div>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded">
-                    <div className="font-medium">Member Since</div>
-                    <div className="text-muted-foreground">Aug 2024</div>
-                  </div>
-                </div>
-              </div>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="darkMode">Dark Mode</Label>
+              <Switch
+                id="darkMode"
+                checked={settings.darkMode}
+                onCheckedChange={(checked) => handleUpdateSetting('darkMode', checked)}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="anonymous">Anonymous on Leaderboards</Label>
+              <Switch
+                id="anonymous"
+                checked={settings.anonymizeOnLeaderboards}
+                onCheckedChange={(checked) => handleUpdateSetting('anonymizeOnLeaderboards', checked)}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="timezone">Timezone</Label>
+              <Select 
+                value={settings.timezone} 
+                onValueChange={(value) => handleUpdateSetting('timezone', value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Asia/Kolkata">Asia/Kolkata</SelectItem>
+                  <SelectItem value="America/New_York">America/New_York</SelectItem>
+                  <SelectItem value="America/Los_Angeles">America/Los_Angeles</SelectItem>
+                  <SelectItem value="Europe/London">Europe/London</SelectItem>
+                  <SelectItem value="Europe/Berlin">Europe/Berlin</SelectItem>
+                  <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                  <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Philosophy Footer */}
+      {/* Advanced Settings */}
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-primary">
-              <Globe className="h-5 w-5" />
-              <span>Plan → Do → Reflect → Adapt</span>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Shield className="h-4 w-4" />
+            <span>Revision Behavior</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="cascade">Enable Cascade Snooze by Default</Label>
+              <p className="text-xs text-muted-foreground">
+                When snoozing, also shift future revisions by the same amount
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Our core philosophy guides every feature to help you build sustainable study habits
+            <Switch
+              id="cascade"
+              checked={settings.enableCascadeSnoozByDefault}
+              onCheckedChange={(checked) => handleUpdateSetting('enableCascadeSnoozByDefault', checked)}
+            />
+          </div>
+          
+          <div>
+            <Label>Timer Quick Presets (minutes)</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {settings.timerQuickPresets.map(preset => (
+                <div key={preset} className="px-3 py-1 bg-muted rounded-full text-sm">
+                  {preset}m
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Use Advanced Settings to customize these presets
             </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Data Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Download className="h-4 w-4" />
+            <span>Data Management</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <Button 
+              onClick={handleExport}
+              variant="outline" 
+              className="flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export Data</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex items-center space-x-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete All Data</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialogs */}
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+      />
     </div>
   );
 }
@@ -374,22 +362,33 @@ const SettingsSkeleton = () => (
         <Skeleton className="h-8 w-64 mb-2" />
         <Skeleton className="h-4 w-48" />
       </div>
-      <Skeleton className="h-10 w-32" />
+      <div className="flex space-x-2">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-24" />
+      </div>
     </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 3 }).map((_, i) => (
         <Card key={i}>
           <CardHeader>
-            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-6 w-32" />
           </CardHeader>
           <CardContent className="space-y-4">
-            {Array.from({ length: 3 }).map((_, j) => (
-              <Skeleton key={j} className="h-16 w-full" />
-            ))}
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
           </CardContent>
         </Card>
       ))}
     </div>
+
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-32 w-full" />
+      </CardContent>
+    </Card>
   </div>
 );

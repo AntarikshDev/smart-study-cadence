@@ -1,23 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import revisionSlice from './slices/revisionSlice';
-import userSlice from './slices/userSlice';
-import analyticsSlice from './slices/analyticsSlice';
-import adminSlice from './slices/adminSlice';
+import { apiSlice } from './api/apiSlice';
 
 export const store = configureStore({
   reducer: {
-    revision: revisionSlice,
-    user: userSlice,
-    analytics: analyticsSlice,
-    admin: adminSlice,
+    [apiSlice.reducerPath]: apiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
-    }),
+    }).concat(apiSlice.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

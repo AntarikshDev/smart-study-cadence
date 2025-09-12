@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchLeaderboard, fetchComparison } from '@/store/slices/analyticsSlice';
+import { useGetLeaderboardQuery, useGetComparisonQuery } from '@/store/api/analyticsApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,30 +25,27 @@ import { LeaderboardEntry, ComparisonData } from '@/types/revision';
 import { toast } from '@/hooks/use-toast';
 
 export default function Leaderboards() {
-  const dispatch = useAppDispatch();
-  const { leaderboard, comparison, loading, error } = useAppSelector((state) => state.analytics);
   const [activeTab, setActiveTab] = useState('subject');
   const [timeWindow, setTimeWindow] = useState('30d');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  
+  const { data: leaderboard = [], isLoading: leaderboardLoading, error: leaderboardError } = useGetLeaderboardQuery(
+    { scope: activeTab, window: timeWindow }
+  );
+  const { data: comparison, isLoading: comparisonLoading, error: comparisonError } = useGetComparisonQuery(
+    { scope: activeTab, id: 'current-user', window: timeWindow }
+  );
+const loading = leaderboardLoading || comparisonLoading;
+  const error = leaderboardError || comparisonError;
 
-  useEffect(() => {
-    loadData();
-  }, [activeTab, timeWindow]);
-
-  const loadData = async () => {
-    try {
-      await Promise.all([
-        dispatch(fetchLeaderboard({ scope: activeTab, window: timeWindow })).unwrap(),
-        dispatch(fetchComparison({ scope: activeTab, id: 'current-user', window: timeWindow })).unwrap()
-      ]);
-    } catch (error) {
-      toast({
-        title: "Error loading leaderboards",
-        description: "Failed to load leaderboard data. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Show error toast when error occurs
+  if (error) {
+    toast({
+      title: "Error loading leaderboards",
+      description: "Failed to load leaderboard data. Please try again.",
+      variant: "destructive",
+    });
+  }
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />;
