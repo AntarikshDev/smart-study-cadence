@@ -1,75 +1,130 @@
 // Leaderboard Controller for Revision Planner Backend
+// Works with rp_sessions, rp_topics, and rp_schedule tables
 
-const pool = require('../config/database'); // Your database connection
+const express = require('express');
+const router = express.Router();
+const pool = require('../db'); // Your database connection
 
 /**
- * Calculate leaderboard metrics for a user
+ * Calculate leaderboard metrics for a user based on rp_sessions and rp_schedule
  */
-const calculateUserMetrics = async (userId, timeWindow) => {
+const calculateUserMetrics = async (userId, timeWindow, scope = 'subject', scopeId = null) => {
+  const intervalDays = timeWindow === '7d' ? 7 : timeWindow === '30d' ? 30 : 365;
+  
+  const scopeFilter = scope === 'subject' && scopeId 
+    ? `AND t.subject = $3` 
+    : scope === 'topic' && scopeId 
+    ? `AND t.id = $3::uuid` 
+    : '';
+  
+  const params = [userId, intervalDays];
+  if (scopeId && scope !== 'global') params.push(scopeId);
+
   const { rows } = await pool.query(`
+    WITH session_data AS (
+      SELECT 
+        s.id,
+        s.topic_id,
+        s.schedule_id,
+        s.started_at,
+        s.finished_at,
+        s.actual_seconds,
+        sc.due_on,
+        sc.status,
+        t.subject
+      FROM rp_sessions s
+      JOIN rp_topics t ON s.topic_id = t.id
+      LEFT JOIN rp_schedule sc ON s.schedule_id = sc.id
+      WHERE s.user_id = $1
+        AND s.started_at >= NOW() - INTERVAL '1 day' * $2
+        AND s.finished_at IS NOT NULL
+        ${scopeFilter}
+    ),
+    metrics AS (
+      SELECT
+        -- On-time rate: sessions completed by or before due date
+        COUNT(*) FILTER (
+          WHERE schedule_id IS NOT NULL 
+          AND finished_at IS NOT NULL 
+          AND DATE(finished_at) <= due_on
+        ) * 100.0 / NULLIF(COUNT(*) FILTER (WHERE schedule_id IS NOT NULL AND finished_at IS NOT NULL), 0) as on_time_rate,
+        
+        -- Total minutes studied
+        COALESCE(SUM(actual_seconds) / 60.0, 0) as total_minutes,
+        
+        -- Average time per revision in minutes
+        COALESCE(AVG(actual_seconds) / 60.0, 0) as avg_time_per_revision,
+        
+        -- Consistency: percentage of days with at least one session
+        COUNT(DISTINCT DATE(started_at)) * 100.0 / $2 as consistency,
+        
+        -- Coverage: percentage of topics studied
+        COUNT(DISTINCT topic_id) * 100.0 / 
+          NULLIF((SELECT COUNT(*) FROM rp_topics WHERE user_id = $1 AND is_archived = FALSE ${scopeFilter.replace('t.', '')}), 0) as coverage
+      FROM session_data
+    )
     SELECT 
-      COUNT(*) FILTER (WHERE rs.completed_at IS NOT NULL AND rs.completed_at <= rs.due_date) * 100.0 / 
-        NULLIF(COUNT(*) FILTER (WHERE rs.completed_at IS NOT NULL), 0) as on_time_rate,
-      COALESCE(SUM(EXTRACT(EPOCH FROM (rs.ended_at - rs.started_at)) / 60), 0) as weekly_minutes,
-      COALESCE(AVG(EXTRACT(EPOCH FROM (rs.ended_at - rs.started_at)) / 60), 0) as avg_time_per_revision,
-      COUNT(DISTINCT DATE(rs.started_at)) * 100.0 / 7 as consistency,
-      COUNT(DISTINCT t.id) * 100.0 / 
-        NULLIF((SELECT COUNT(*) FROM topics WHERE user_id = $1), 0) as coverage
-    FROM revision_sessions rs
-    JOIN topics t ON rs.topic_id = t.id
-    WHERE rs.user_id = $1
-      AND rs.started_at >= NOW() - INTERVAL '${timeWindow === 'week' ? '7 days' : timeWindow === 'month' ? '30 days' : '10 years'}'
-  `, [userId]);
+      COALESCE(on_time_rate, 0)::numeric(5,2) as on_time_rate,
+      COALESCE(total_minutes, 0)::integer as weekly_minutes,
+      COALESCE(avg_time_per_revision, 0)::integer as avg_time_per_revision,
+      COALESCE(consistency, 0)::numeric(5,2) as consistency,
+      COALESCE(coverage, 0)::numeric(5,2) as coverage
+    FROM metrics
+  `, params);
 
   return rows[0];
 };
 
 /**
  * Get leaderboard entries
- * GET /api/leaderboard?scope=global&window=week
+ * GET /leaderboard/leaderboard?scope=subject&window=30d
  */
-exports.getLeaderboard = async (req, res) => {
+router.get('/leaderboard', async (req, res) => {
   try {
-    const { scope = 'global', window = 'week' } = req.query;
-    const userId = req.user?.id; // From auth middleware
+    const { scope = 'subject', window = '30d', scopeId = null } = req.query;
+    const userId = req.user?.id || 1; // Mock user ID for testing
 
-    // Calculate leaderboard for all users
+    // Get all active users
     const { rows: users } = await pool.query(`
-      SELECT id, username, avatar_url FROM users
-      WHERE is_active = true
+      SELECT DISTINCT u.id, u.name, u.avatar_url 
+      FROM users u
+      WHERE EXISTS (
+        SELECT 1 FROM rp_sessions s WHERE s.user_id = u.id
+      )
     `);
 
     const leaderboardData = [];
 
+    // Calculate metrics for each user
     for (const user of users) {
-      const metrics = await calculateUserMetrics(user.id, window);
+      const metrics = await calculateUserMetrics(user.id, window, scope, scopeId);
       
       leaderboardData.push({
-        user_id: user.id,
-        username: user.username,
+        id: user.id,
+        name: user.name,
         avatar_url: user.avatar_url,
-        on_time_rate: parseFloat(metrics.on_time_rate) || 0,
-        weekly_minutes: parseInt(metrics.weekly_minutes) || 0,
-        avg_time_per_revision: parseInt(metrics.avg_time_per_revision) || 0,
+        onTimeRate: parseFloat(metrics.on_time_rate) || 0,
+        weeklyMinutes: parseInt(metrics.weekly_minutes) || 0,
+        avgTimePerRevision: parseInt(metrics.avg_time_per_revision) || 0,
         consistency: parseFloat(metrics.consistency) || 0,
         coverage: parseFloat(metrics.coverage) || 0,
-        is_current_user: user.id === userId,
+        isCurrentUser: user.id === userId,
       });
     }
 
     // Sort by on_time_rate and assign ranks
-    leaderboardData.sort((a, b) => b.on_time_rate - a.on_time_rate);
+    leaderboardData.sort((a, b) => b.onTimeRate - a.onTimeRate);
     leaderboardData.forEach((entry, index) => {
       entry.rank = index + 1;
     });
 
-    // Store in database
+    // Store in database for caching
     for (const entry of leaderboardData) {
       await pool.query(`
-        INSERT INTO leaderboard_entries 
+        INSERT INTO rp_leaderboard_entries 
         (user_id, username, avatar_url, rank, on_time_rate, weekly_minutes, 
-         avg_time_per_revision, consistency, coverage, scope, time_window, is_current_user)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         avg_time_per_revision, consistency, coverage, scope, scope_id, time_window, is_current_user)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT (user_id, scope, scope_id, time_window) 
         DO UPDATE SET 
           rank = $4,
@@ -78,146 +133,166 @@ exports.getLeaderboard = async (req, res) => {
           avg_time_per_revision = $7,
           consistency = $8,
           coverage = $9,
-          is_current_user = $12,
-          calculated_at = CURRENT_TIMESTAMP
+          is_current_user = $13,
+          calculated_at = now(),
+          updated_at = now()
       `, [
-        entry.user_id, entry.username, entry.avatar_url, entry.rank,
-        entry.on_time_rate, entry.weekly_minutes, entry.avg_time_per_revision,
-        entry.consistency, entry.coverage, scope, window, entry.is_current_user
+        entry.id, entry.name, entry.avatar_url, entry.rank,
+        entry.onTimeRate, entry.weeklyMinutes, entry.avgTimePerRevision,
+        entry.consistency, entry.coverage, scope, scopeId, window, entry.isCurrentUser
       ]);
     }
 
     res.json(leaderboardData);
-  } catch (error) {
-    console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard data' });
+  } catch (err) {
+    console.error('Leaderboard Error:', err);
+    res.status(500).json({ message: 'Failed to fetch leaderboard' });
   }
-};
+});
 
 /**
  * Get comparison data
- * GET /api/comparison?scope=global&id=user_id&window=week
+ * GET /leaderboard/comparison?scope=subject&id=current-user&window=30d
  */
-exports.getComparison = async (req, res) => {
+router.get('/comparison', async (req, res) => {
   try {
-    const { scope = 'global', id, window = 'week' } = req.query;
-    const userId = id || req.user?.id;
+    const { scope = 'subject', id = 'current-user', window = '30d', scopeId = null } = req.query;
+    const userId = id === 'current-user' ? (req.user?.id || 1) : id;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    console.log('Comparison Params:', { scope, id, window, userId, scopeId });
 
     // Get current user metrics
-    const userMetrics = await calculateUserMetrics(userId, window);
+    const userMetrics = await calculateUserMetrics(userId, window, scope, scopeId);
 
     // Get all users metrics for comparison
     const { rows: allUsers } = await pool.query(`
-      SELECT id FROM users WHERE is_active = true
+      SELECT DISTINCT user_id as id 
+      FROM rp_sessions 
+      WHERE finished_at IS NOT NULL
     `);
 
     const allMetrics = [];
     for (const user of allUsers) {
-      const metrics = await calculateUserMetrics(user.id, window);
-      allMetrics.push(metrics);
+      const metrics = await calculateUserMetrics(user.id, window, scope, scopeId);
+      allMetrics.push({
+        ...metrics,
+        user_id: user.id
+      });
     }
 
-    // Calculate comparison data
+    // Calculate ranks and comparison data
     const sortedByOnTime = [...allMetrics].sort((a, b) => 
       (parseFloat(b.on_time_rate) || 0) - (parseFloat(a.on_time_rate) || 0)
     );
     
-    const topper = sortedByOnTime[0];
+    // Find user rank
+    const userRank = sortedByOnTime.findIndex(m => m.user_id === userId) + 1;
+    
+    // Topper (rank 1)
+    const topper = sortedByOnTime[0] || {};
+    
+    // Bottom 25% for "struggling" average
     const bottom25Percent = sortedByOnTime.slice(Math.floor(sortedByOnTime.length * 0.75));
     
+    // Calculate averages
     const avgOnTimeRate = allMetrics.reduce((sum, m) => 
       sum + (parseFloat(m.on_time_rate) || 0), 0) / allMetrics.length;
     const avgWeeklyMinutes = allMetrics.reduce((sum, m) => 
       sum + (parseInt(m.weekly_minutes) || 0), 0) / allMetrics.length;
+    const avgTimePerRevision = allMetrics.reduce((sum, m) => 
+      sum + (parseInt(m.avg_time_per_revision) || 0), 0) / allMetrics.length;
+    const avgConsistency = allMetrics.reduce((sum, m) => 
+      sum + (parseFloat(m.consistency) || 0), 0) / allMetrics.length;
+    const avgCoverage = allMetrics.reduce((sum, m) => 
+      sum + (parseFloat(m.coverage) || 0), 0) / allMetrics.length;
     
+    // Struggling averages
     const strugglingOnTimeRate = bottom25Percent.reduce((sum, m) => 
       sum + (parseFloat(m.on_time_rate) || 0), 0) / bottom25Percent.length;
     const strugglingWeeklyMinutes = bottom25Percent.reduce((sum, m) => 
       sum + (parseInt(m.weekly_minutes) || 0), 0) / bottom25Percent.length;
+    const strugglingTimePerRevision = bottom25Percent.reduce((sum, m) => 
+      sum + (parseInt(m.avg_time_per_revision) || 0), 0) / bottom25Percent.length;
+    const strugglingConsistency = bottom25Percent.reduce((sum, m) => 
+      sum + (parseFloat(m.consistency) || 0), 0) / bottom25Percent.length;
+    const strugglingCoverage = bottom25Percent.reduce((sum, m) => 
+      sum + (parseFloat(m.coverage) || 0), 0) / bottom25Percent.length;
 
-    const comparisonData = {
-      you_on_time_rate: parseFloat(userMetrics.on_time_rate) || 0,
-      you_weekly_minutes: parseInt(userMetrics.weekly_minutes) || 0,
-      topper_on_time_rate: parseFloat(topper.on_time_rate) || 0,
-      topper_weekly_minutes: parseInt(topper.weekly_minutes) || 0,
-      average_on_time_rate: avgOnTimeRate,
-      average_weekly_minutes: Math.round(avgWeeklyMinutes),
-      struggling_on_time_rate: strugglingOnTimeRate,
-      struggling_weekly_minutes: Math.round(strugglingWeeklyMinutes),
+    const comparisonResult = {
+      you: {
+        rank: userRank,
+        onTimeRate: parseFloat(userMetrics.on_time_rate) || 0,
+        weeklyMinutes: parseInt(userMetrics.weekly_minutes) || 0,
+        avgTimePerRevision: parseInt(userMetrics.avg_time_per_revision) || 0,
+        consistency: parseFloat(userMetrics.consistency) || 0,
+        coverage: parseFloat(userMetrics.coverage) || 0,
+      },
+      topper: {
+        rank: 1,
+        onTimeRate: parseFloat(topper.on_time_rate) || 0,
+        weeklyMinutes: parseInt(topper.weekly_minutes) || 0,
+        avgTimePerRevision: parseInt(topper.avg_time_per_revision) || 0,
+        consistency: parseFloat(topper.consistency) || 0,
+        coverage: parseFloat(topper.coverage) || 0,
+      },
+      average: {
+        rank: Math.round(allMetrics.length / 2),
+        onTimeRate: Math.round(avgOnTimeRate),
+        weeklyMinutes: Math.round(avgWeeklyMinutes),
+        avgTimePerRevision: Math.round(avgTimePerRevision),
+        consistency: Math.round(avgConsistency),
+        coverage: Math.round(avgCoverage),
+      },
+      struggling: {
+        rank: sortedByOnTime.length,
+        onTimeRate: Math.round(strugglingOnTimeRate),
+        weeklyMinutes: Math.round(strugglingWeeklyMinutes),
+        avgTimePerRevision: Math.round(strugglingTimePerRevision),
+        consistency: Math.round(strugglingConsistency),
+        coverage: Math.round(strugglingCoverage),
+      },
     };
 
     // Store in database
     await pool.query(`
-      INSERT INTO comparison_data 
-      (user_id, scope, time_window, you_on_time_rate, you_weekly_minutes,
-       topper_on_time_rate, topper_weekly_minutes, average_on_time_rate,
-       average_weekly_minutes, struggling_on_time_rate, struggling_weekly_minutes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO rp_comparison_data 
+      (user_id, scope, scope_id, time_window, 
+       you_rank, you_on_time_rate, you_weekly_minutes, you_avg_time_per_revision, you_consistency, you_coverage,
+       topper_rank, topper_on_time_rate, topper_weekly_minutes, topper_avg_time_per_revision, topper_consistency, topper_coverage,
+       average_rank, average_on_time_rate, average_weekly_minutes, average_avg_time_per_revision, average_consistency, average_coverage,
+       struggling_rank, struggling_on_time_rate, struggling_weekly_minutes, struggling_avg_time_per_revision, struggling_consistency, struggling_coverage)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
       ON CONFLICT (user_id, scope, scope_id, time_window)
       DO UPDATE SET
-        you_on_time_rate = $4,
-        you_weekly_minutes = $5,
-        topper_on_time_rate = $6,
-        topper_weekly_minutes = $7,
-        average_on_time_rate = $8,
-        average_weekly_minutes = $9,
-        struggling_on_time_rate = $10,
-        struggling_weekly_minutes = $11,
-        calculated_at = CURRENT_TIMESTAMP
+        you_rank = $5, you_on_time_rate = $6, you_weekly_minutes = $7, you_avg_time_per_revision = $8, you_consistency = $9, you_coverage = $10,
+        topper_rank = $11, topper_on_time_rate = $12, topper_weekly_minutes = $13, topper_avg_time_per_revision = $14, topper_consistency = $15, topper_coverage = $16,
+        average_rank = $17, average_on_time_rate = $18, average_weekly_minutes = $19, average_avg_time_per_revision = $20, average_consistency = $21, average_coverage = $22,
+        struggling_rank = $23, struggling_on_time_rate = $24, struggling_weekly_minutes = $25, struggling_avg_time_per_revision = $26, struggling_consistency = $27, struggling_coverage = $28,
+        calculated_at = now(), updated_at = now()
     `, [
-      userId, scope, window,
-      comparisonData.you_on_time_rate, comparisonData.you_weekly_minutes,
-      comparisonData.topper_on_time_rate, comparisonData.topper_weekly_minutes,
-      comparisonData.average_on_time_rate, comparisonData.average_weekly_minutes,
-      comparisonData.struggling_on_time_rate, comparisonData.struggling_weekly_minutes
+      userId, scope, scopeId, window,
+      comparisonResult.you.rank, comparisonResult.you.onTimeRate, comparisonResult.you.weeklyMinutes, comparisonResult.you.avgTimePerRevision, comparisonResult.you.consistency, comparisonResult.you.coverage,
+      comparisonResult.topper.rank, comparisonResult.topper.onTimeRate, comparisonResult.topper.weeklyMinutes, comparisonResult.topper.avgTimePerRevision, comparisonResult.topper.consistency, comparisonResult.topper.coverage,
+      comparisonResult.average.rank, comparisonResult.average.onTimeRate, comparisonResult.average.weeklyMinutes, comparisonResult.average.avgTimePerRevision, comparisonResult.average.consistency, comparisonResult.average.coverage,
+      comparisonResult.struggling.rank, comparisonResult.struggling.onTimeRate, comparisonResult.struggling.weeklyMinutes, comparisonResult.struggling.avgTimePerRevision, comparisonResult.struggling.consistency, comparisonResult.struggling.coverage
     ]);
 
-    res.json(comparisonData);
-  } catch (error) {
-    console.error('Error fetching comparison data:', error);
-    res.status(500).json({ error: 'Failed to fetch comparison data' });
+    res.json(comparisonResult);
+  } catch (err) {
+    console.error('Comparison Error:', err.message);
+    res.status(500).json({ message: 'Failed to fetch comparison data', error: err.message });
   }
-};
+});
+
+module.exports = router;
 
 /**
- * Get cached leaderboard (faster endpoint)
- * GET /api/leaderboard/cached?scope=global&window=week
- */
-exports.getCachedLeaderboard = async (req, res) => {
-  try {
-    const { scope = 'global', window = 'week' } = req.query;
-    const userId = req.user?.id;
-
-    const { rows } = await pool.query(`
-      SELECT * FROM leaderboard_entries
-      WHERE scope = $1 AND time_window = $2
-      ORDER BY rank ASC
-    `, [scope, window]);
-
-    // Mark current user
-    const leaderboard = rows.map(entry => ({
-      ...entry,
-      is_current_user: entry.user_id === userId
-    }));
-
-    res.json(leaderboard);
-  } catch (error) {
-    console.error('Error fetching cached leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch cached leaderboard' });
-  }
-};
-
-/**
- * Routes to add in your Express router:
+ * Routes setup in your main Express app:
  * 
- * const leaderboardController = require('./controllers/leaderboardController');
- * const authMiddleware = require('./middleware/auth');
+ * const leaderboardRouter = require('./routes/leaderboard');
+ * app.use('/leaderboard', leaderboardRouter);
  * 
- * router.get('/leaderboard', authMiddleware, leaderboardController.getLeaderboard);
- * router.get('/leaderboard/cached', authMiddleware, leaderboardController.getCachedLeaderboard);
- * router.get('/comparison', authMiddleware, leaderboardController.getComparison);
+ * Available endpoints:
+ * GET /leaderboard/leaderboard?scope=subject&window=30d
+ * GET /leaderboard/comparison?scope=subject&id=current-user&window=30d
  */
