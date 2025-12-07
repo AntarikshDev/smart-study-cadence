@@ -7,32 +7,32 @@
 @layer base {
   :root {
     /* Base colors - Clean white canvas */
-    --background: 0 0% 100%;
-    --foreground: 220 9% 15%;
+    --background: 252 100% 99.0196%;
+    --foreground: 222 46.4286% 10.9804%;
 
     /* Card system - White cards with subtle shadows */
     --card: 0 0% 100%;
-    --card-foreground: 220 9% 15%;
+    --card-foreground: 222 46.4286% 10.9804%;
 
     /* Popover elements */
     --popover: 0 0% 100%;
-    --popover-foreground: 220 9% 15%;
+    --popover-foreground: 222 46.4286% 10.9804%;
 
     /* Primary - Emerald/Teal accent matching LMS */
-    --primary: 160 84% 39%;
+    --primary: 258 88.5057% 65.8824%;
     --primary-foreground: 0 0% 100%;
     --primary-muted: 160 47% 95%;
 
     /* Secondary - Subtle greys for dividers */
-    --secondary: 210 17% 96%;
-    --secondary-foreground: 220 9% 15%;
+    --secondary: 252 100% 97.0588%;
+    --secondary-foreground: 258 88.6957% 45.098%;
 
     /* Muted elements - Greys for subtle text */
     --muted: 210 17% 96%;
-    --muted-foreground: 220 5% 47%;
+    --muted-foreground: 220 8.9362% 46.0784%;
 
     /* Accent - Teal variant */
-    --accent: 172 66% 50%;
+    --accent: 174 84.2795% 44.902%;
     --accent-foreground: 0 0% 100%;
 
     /* Status colors for revision states */
@@ -44,9 +44,9 @@
     --destructive-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 160 84% 39%;
+    --border: 253 30.4348% 90.9804%;
+    --input: 253 30.4348% 90.9804%;
+    --ring: 258 88.5057% 65.8824%;
 
     /* Radius system - Rounded corners */
     --radius: 0.5rem;
